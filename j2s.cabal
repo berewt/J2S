@@ -21,12 +21,14 @@ library
   hs-source-dirs: src
   exposed-modules:
     J2S
-  -- other-modules:
-    -- 
+    J2S.Game.Nim.Core
+  other-modules:
+    J2S.Game.Nim.Types
   default-extensions:  NoImplicitPrelude
   ghc-options: -Wall
   build-depends:
     base             >= 4    && < 5
+    , bifunctors     >= 4.2  && < 5
     , classy-prelude >= 0.10 && < 0.11
     , containers     >= 0.5  && < 0.6
     , either         >= 4.3  && < 4.4
@@ -37,6 +39,7 @@ library
     , mtl            >= 2.1  && < 2.2
     , nats           >= 1    && < 2
     , semigroups     >= 0.16 && < 0.17
+    , zippers        >= 0.2  && < 0.3
 
 -- doctests
 test-suite doctest
