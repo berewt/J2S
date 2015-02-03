@@ -6,20 +6,19 @@ module J2S
   , runGame
   ) where
 
-import ClassyPrelude
-
 import Control.Lens
 
-import Control.Monad.Loops
+import Control.Monad.Trans
 import Control.Monad.Trans.Either
 
-import Data.Either.Combinators (fromLeft)
-import qualified Data.Map as M (Map, empty)
+import Control.Monad.Loops
 
-data GameRules info action err inter player score
+import Data.Either.Combinators (fromLeft')
+
+data GameRules info action err inter player end
   = GameRules
-  { _nextPlayer    :: info   -> (Either (M.Map player score)) player
-  , _executeAction :: action -> info -> EitherT err inter info
+  { _nextPlayer    :: info   -> player
+  , _executeAction :: action -> info -> EitherT err (EitherT end inter) info
   , _askAction     :: player -> info -> inter action
   , _informOnError :: err    -> inter ()
   }
@@ -27,33 +26,27 @@ data GameRules info action err inter player score
 makeLenses ''GameRules
 
 play :: (Functor inter, Monad inter)
-     => GameRules info action err inter player score
+     => GameRules info action err inter player end
      -> info
-     -> inter (M.Map player score)
-play rules = fmap (fromLeft M.empty) . runEitherT . iterateM_ (gameEngine rules)
+     -> inter end
+play rules = fmap fromLeft' -- fromLeft' is ok only Left can get out of iterateM
+               . runEitherT . iterateM_ (gameEngine rules)
 
 gameEngine :: (Functor inter, Monad inter)
-     => GameRules info action err inter player score
+     => GameRules info action err inter player end
      -> info
-     -> EitherT (M.Map player score) inter info
-gameEngine rules i = do
-  p <- hoistEither $ view nextPlayer rules i
-  lift $ playTurn rules i p
-
-playTurn :: (Monad inter)
-     => GameRules info action err inter player score
-     -> info
-     -> player
-     -> inter info
-playTurn bg i p = do
-  a  <- view askAction bg p i
-  i' <- runEitherT $ view executeAction bg a i
-  either (\e -> view informOnError bg e >> playTurn bg i p) return $ i'
+     -> EitherT end inter info
+gameEngine r i = let
+  p = view nextPlayer r i
+  in do
+    a  <- lift $ view askAction r p i
+    i' <- runEitherT $ view executeAction r a i
+    either (\e -> lift (view informOnError r e) >> gameEngine r i) return $ i'
 
 runGame :: (Functor inter, Monad inter)
-        => GameRules info action err inter player score
+        => GameRules info action err inter player end
         -> (forall a. inter a -> IO a)
-        -> (Map player score -> IO ())
+        -> (end -> IO ())
         -> info
         -> IO ()
 runGame rules it ds initBoard = it (play rules initBoard) >>= ds 

@@ -5,9 +5,8 @@
 module J2S.Game.Nim.Core
   ( nimRules
   , nimConfig
-  , Info
-  , Finished
   , Ongoing
+  , Finished
   , activePlayer
   , otherPlayer
   , heaps
@@ -15,29 +14,28 @@ module J2S.Game.Nim.Core
   , loser
   , nbOfHeaps
   , InteractionF (..)
+  , Inter
   , Move
+  , MoveError (..)
   , Player (..)
   , PlayerType (..)
-  , Score
+  , neh
   ) where
-
-import ClassyPrelude
 
 import Control.Lens
 import Control.Zipper
 
+import Control.Monad
 import Control.Monad.Free
+import Control.Monad.Trans
 import Control.Monad.Trans.Either
 
-import qualified Data.Map as M
 import qualified Data.List.NonEmpty as NE
 
 import Numeric.Natural
 
 import qualified J2S as J
 import J2S.Game.Nim.Types
-
-type Info = Either Finished Ongoing 
 
 data Ongoing
   = Ongoing
@@ -56,7 +54,7 @@ data Finished
 type Move = (Natural, Natural)
 
 data InteractionF a
-  = AskMove Player Info (Move -> a)
+  = AskMove Player Ongoing (Move -> a)
   | DisplayMove Move a
   | RaiseError MoveError a
   deriving (Functor)
@@ -66,7 +64,8 @@ type Inter = Free InteractionF
 data MoveError
   = InvalidIndex Natural
   | InvalidTokens Natural
-  | NoMoveAvailable
+
+type TurnResult = EitherT MoveError (EitherT Finished Inter) Ongoing 
 
 data Player
   = FirstPlayer PlayerType 
@@ -76,40 +75,31 @@ data Player
 data PlayerType = Human | Computer
   deriving (Eq, Ord)
 
-data Score = Win | Lose
-
 makeLenses '' Ongoing
 makeLenses '' Finished
 
-nimRules :: J.GameRules Info Move MoveError Inter Player Score
-nimRules = J.GameRules nextPlayer executeAction askAction informOnError
-
-nimConfig :: PlayerType -> PlayerType -> NonEmptyHeaps -> Info
-nimConfig p1 p2 = return . Ongoing (FirstPlayer p1) (SecondPlayer p2)
-
-nextPlayer :: Info -> Either (Map Player Score) Player
-nextPlayer = bimap
-  ( M.fromList . sequence  [ views winner $ flip (,) Win
-                           , views loser  $ flip (,) Lose 
-                           ]
-  )
-  ( view activePlayer )
+nimRules :: J.GameRules Ongoing Move MoveError Inter Player Finished
+nimRules = J.GameRules nextPlayer executeMove askAction informOnError
 
 
-executeAction :: Move -> Info -> EitherT MoveError Inter Info
-executeAction m = either (const $ left NoMoveAvailable) (executeMove m)  
+nimConfig :: PlayerType -> PlayerType -> NonEmptyHeaps -> Ongoing
+nimConfig p1 p2 = Ongoing (FirstPlayer p1) (SecondPlayer p2)
 
-executeMove :: Move -> Ongoing -> EitherT MoveError Inter Info
-executeMove m =
-  (=<<) . (afterMove m) <*> modifyHeap m . buildHeapZipper
+
+nextPlayer :: Ongoing -> Player
+nextPlayer = view activePlayer
+
+
+executeMove :: Move -> Ongoing -> TurnResult
+executeMove m o = do
+  idx <- modifyHeap m $ buildHeapZipper o
+  lift $ afterMove m o idx
 
 afterMove :: Move
           -> Ongoing
           -> NE.NonEmpty Natural
-          -> EitherT MoveError Inter Info
-afterMove m o h = do
-  lift $ (inform m)
-  rebuildInfo o h
+          -> EitherT Finished Inter Ongoing 
+afterMove m o h = lift (inform m) >> hoistEither (rebuildInfo o h)
 
 buildHeapZipper :: Ongoing -> Top :>> NE.NonEmpty Natural :>> Natural
 buildHeapZipper = fromWithin traverse . zipper . views heaps (review neh)
@@ -138,15 +128,14 @@ popHeap n = let
   pop = focus (safeSubtract n)
   in handleError . pop
 
-rebuildInfo :: Ongoing -> NE.NonEmpty Natural
-            -> EitherT MoveError Inter Info
+rebuildInfo :: Ongoing -> NE.NonEmpty Natural -> Either Finished Ongoing
 rebuildInfo o h = let
   a = view activePlayer o
   n = view otherPlayer o
-  in return $ maybe
-      (Left $ Finished a n $ fromIntegral $ length h)
+  in maybe
+      (Left $ Finished a n $ fromIntegral $ NE.length h)
       (Right . Ongoing n a)
-       $ preview neh h
+      $ preview neh h
 
 inform :: Move -> Inter ()
 inform = liftF . flip DisplayMove ()
@@ -154,8 +143,7 @@ inform = liftF . flip DisplayMove ()
 safeSubtract :: (Ord a, Num a) => a -> a -> Maybe a
 safeSubtract x y = guard (x <= y) >> return (y - x)
 
-
-askAction :: Player -> Info -> Inter Move
+askAction :: Player -> Ongoing -> Inter Move
 askAction p = liftF . flip (AskMove p) id
 
 

@@ -9,10 +9,11 @@ module J2S.Game.Nim.Types
   , neh
   ) where
 
-import ClassyPrelude
-
 import Control.Monad (mfilter)
+import Control.Monad.Trans
 import Control.Lens
+
+import qualified Data.Foldable as F
 
 import qualified Test.QuickCheck as Q
 
@@ -25,11 +26,11 @@ import Numeric.Natural
 neh :: Prism' (NE.NonEmpty Natural) NonEmptyHeaps
 neh = let
   fromNonEmpty = getHeaps
-  toNonEmpty = fmap NonEmptyHeaps . mfilter allEmpty . return
+  toNonEmpty = fmap NonEmptyHeaps . mfilter (not . allEmpty) . return
   in prism' fromNonEmpty toNonEmpty
 
-allEmpty :: (MonoFoldable t, Num (Element t), Eq (Element t)) => t -> Bool
-allEmpty = all (== 0)
+allEmpty :: (F.Foldable t, Num a, Eq a) => t a -> Bool
+allEmpty = F.all (== 0)
 
 -- | A wrapper or NonEmpty lists of Natural where at least one value is superior
 --   to zero.
