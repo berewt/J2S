@@ -14,6 +14,7 @@ import Data.Monoid ((<>), mappend)
 import qualified Data.Foldable as F
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Text as T
+import qualified Data.Text.IO as T
 
 import J2S (runGame)
 import qualified J2S.Game.Nim.Core as Nim
@@ -25,13 +26,13 @@ goInter :: Nim.Inter a -> IO a
 goInter (Pure x) = return x
 goInter (Free f) = case f of
   Nim.AskMove p info g -> do
-    print $ playerName p <> "'s turn:"
-    print $ showInfo info
+    T.putStrLn $ playerName p <> "'s turn:"
+    T.putStrLn $ showInfo info
     i <- askIndex p info
     n <- askNbTokens p i info
     goInter $ g (i, n)
   Nim.DisplayMove (i, n) x -> do
-    print $ "Remove " <> T.pack (show n) <> " tokens from heap " <> T.pack (show i)
+    T.putStrLn $ "Remove " <> T.pack (show n) <> " tokens from heap " <> T.pack (show i)
     goInter x
   Nim.RaiseError e x -> do
     showError e
@@ -45,7 +46,7 @@ showHeaps h = let
   m = fromIntegral $ F.maximum h
   line = liftA2 mappend (flip replicate 'x') (flip replicate ' ' . (m -))
          . fromIntegral
-  toVertical = fmap T.reverse . T.transpose . fmap T.pack . NE.toList
+  toVertical = T.transpose . fmap (T.reverse . T.pack) . NE.toList
   in T.intercalate "\n" . toVertical $ fmap line h
 
 askIndex :: Nim.Player -> Nim.Ongoing -> IO Natural
@@ -67,4 +68,4 @@ playerName (Nim.FirstPlayer  _) = "Player1"
 playerName (Nim.SecondPlayer _) = "Player2"
 
 showScore :: Nim.Finished -> IO ()
-showScore = views Nim.winner (print . (<> " won") . playerName)
+showScore = views Nim.winner (T.putStrLn . (<> " won") . playerName)
