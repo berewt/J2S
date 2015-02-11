@@ -1,12 +1,11 @@
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE DeriveFunctor #-}
 
 module J2S.Game.Nim.Core
-  ( nimRules
-  , nimConfig
-  , Ongoing
-  , Finished
+  ( nimConfig
+  , Nim
   , activePlayer
   , otherPlayer
   , heaps
@@ -14,11 +13,9 @@ module J2S.Game.Nim.Core
   , loser
   , nbOfHeaps
   , InteractionF (..)
-  , Inter
-  , Move
-  , MoveError (..)
-  , Player (..)
   , PlayerType (..)
+  , NimPlayer (..)
+  , J.Err (..)
   , neh
   ) where
 
@@ -37,115 +34,108 @@ import Numeric.Natural
 import qualified J2S as J
 import J2S.Game.Nim.Types
 
-data Ongoing
-  = Ongoing
-  { _activePlayer :: Player
-  , _otherPlayer   :: Player
+data Nim
+  = Nim
+  { _activePlayer :: J.Player Nim
+  , _otherPlayer   :: J.Player Nim
   , _heaps        :: NonEmptyHeaps
   }
 
-data Finished
-  = Finished
-  { _winner    :: Player
-  , _loser     :: Player
+data EndNim
+  = EndNim
+  { _winner    :: J.Player Nim
+  , _loser     :: J.Player Nim
   , _nbOfHeaps :: Natural
   }
 
-type Move = (Natural, Natural)
+type instance J.End Nim = EndNim
+
+type instance J.Action Nim = (Natural, Natural)
 
 data InteractionF a
-  = AskMove Player Ongoing (Move -> a)
-  | DisplayMove Move a
-  | RaiseError MoveError a
+  = AskAction (J.Player Nim) Nim (J.Action Nim -> a)
+  | DisplayAction (J.Action Nim) a
+  | RaiseError (J.Err Nim) a
   deriving (Functor)
 
-type Inter = Free InteractionF
+type instance J.Inter Nim = Free InteractionF
 
-data MoveError
+data instance J.Err Nim
   = InvalidIndex Natural
   | InvalidTokens Natural
 
-type TurnResult = EitherT MoveError (EitherT Finished Inter) Ongoing 
-
-data Player
-  = FirstPlayer PlayerType 
+data NimPlayer
+  = FirstPlayer PlayerType
   | SecondPlayer PlayerType
   deriving (Eq, Ord)
+
+type instance J.Player Nim = NimPlayer
 
 data PlayerType = Human | Computer
   deriving (Eq, Ord)
 
-makeLenses '' Ongoing
-makeLenses '' Finished
+makeLenses '' Nim
+makeLenses '' EndNim
 
-nimRules :: J.GameRules Ongoing Move MoveError Inter Player Finished
-nimRules = J.GameRules nextPlayer executeMove askAction informOnError
+nimConfig :: PlayerType -> PlayerType -> NonEmptyHeaps -> Nim
+nimConfig p1 p2 = Nim (FirstPlayer p1) (SecondPlayer p2)
 
+instance J.BoardInfo Nim where
 
-nimConfig :: PlayerType -> PlayerType -> NonEmptyHeaps -> Ongoing
-nimConfig p1 p2 = Ongoing (FirstPlayer p1) (SecondPlayer p2)
+  nextPlayer = view activePlayer
 
+  executeAction o m = do
+    idx <- modifyHeap m $ buildHeapZipper o
+    lift $ afterAction o m idx
 
-nextPlayer :: Ongoing -> Player
-nextPlayer = view activePlayer
+  askAction i p = liftF $ AskAction p i id
 
+  informOnError = liftF . flip RaiseError ()
 
-executeMove :: Move -> Ongoing -> TurnResult
-executeMove m o = do
-  idx <- modifyHeap m $ buildHeapZipper o
-  lift $ afterMove m o idx
-
-afterMove :: Move
-          -> Ongoing
+afterAction :: Nim
+          -> J.Action Nim
           -> NE.NonEmpty Natural
-          -> EitherT Finished Inter Ongoing 
-afterMove m o h = lift (inform m) >> hoistEither (rebuildInfo o h)
+          -> EitherT (J.End Nim) (J.Inter Nim) Nim
+afterAction o m h = lift (inform m) >> hoistEither (rebuildInfo o h)
 
-buildHeapZipper :: Ongoing -> Top :>> NE.NonEmpty Natural :>> Natural
+buildHeapZipper :: Nim -> Top :>> NE.NonEmpty Natural :>> Natural
 buildHeapZipper = fromWithin traverse . zipper . views heaps (review neh)
 
 modifyHeap :: (Monad m)
-           => Move
+           => J.Action Nim
            -> Top :>> NE.NonEmpty Natural :>> Natural
-           -> EitherT MoveError m (NE.NonEmpty Natural)
-modifyHeap (i, n) = moveToIndex i >=> popHeap n 
+           -> EitherT (J.Err Nim) m (NE.NonEmpty Natural)
+modifyHeap (i, n) = moveToIndex i >=> popHeap n
 
 moveToIndex :: (Monad m)
            => Natural
            -> Top :>> NE.NonEmpty Natural :>> Natural
-           -> EitherT MoveError m (Top :>> NE.NonEmpty Natural :>> Natural)
+           -> EitherT (J.Err Nim) m (Top :>> NE.NonEmpty Natural :>> Natural)
 moveToIndex i = let
   handleError = maybe (left $ InvalidIndex i) return
-  move = jerks rightward (fromIntegral i) 
+  move = jerks rightward (fromIntegral i)
   in handleError . move
 
 popHeap :: (Monad m)
         => Natural
         -> Top :>> NE.NonEmpty Natural :>> Natural
-        -> EitherT MoveError m (NE.NonEmpty Natural)
+        -> EitherT (J.Err Nim) m (NE.NonEmpty Natural)
 popHeap n = let
   handleError = maybe (left $ InvalidTokens n) (return . rezip)
   pop = focus (safeSubtract n)
   in handleError . pop
 
-rebuildInfo :: Ongoing -> NE.NonEmpty Natural -> Either Finished Ongoing
+rebuildInfo :: Nim -> NE.NonEmpty Natural -> Either (J.End Nim) Nim
 rebuildInfo o h = let
   a = view activePlayer o
   n = view otherPlayer o
   in maybe
-      (Left $ Finished a n $ fromIntegral $ NE.length h)
-      (Right . Ongoing n a)
+      (Left $ EndNim a n $ fromIntegral $ NE.length h)
+      (Right . Nim n a)
       $ preview neh h
 
-inform :: Move -> Inter ()
-inform = liftF . flip DisplayMove ()
+inform :: J.Action Nim -> J.Inter Nim ()
+inform = liftF . flip DisplayAction ()
 
 safeSubtract :: (Ord a, Num a) => a -> a -> Maybe a
 safeSubtract x y = guard (x <= y) >> return (y - x)
-
-askAction :: Player -> Ongoing -> Inter Move
-askAction p = liftF . flip (AskMove p) id
-
-
-informOnError :: MoveError -> Inter ()
-informOnError = liftF . flip RaiseError ()

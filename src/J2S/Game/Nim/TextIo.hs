@@ -16,30 +16,30 @@ import qualified Data.List.NonEmpty as NE
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 
-import J2S (runGame)
-import qualified J2S.Game.Nim.Core as Nim
+import J2S
+import J2S.Game.Nim.Core
 
-textNim :: Nim.Ongoing -> IO ()
-textNim = runGame Nim.nimRules goInter showScore
+textNim :: Nim -> IO ()
+textNim = runGame goInter showScore
 
-goInter :: Nim.Inter a -> IO a
+goInter :: Inter Nim a -> IO a
 goInter (Pure x) = return x
 goInter (Free f) = case f of
-  Nim.AskMove p info g -> do
+  AskAction p info g -> do
     T.putStrLn $ playerName p <> "'s turn:"
     T.putStrLn $ showInfo info
     i <- askIndex p info
     n <- askNbTokens p i info
     goInter $ g (i, n)
-  Nim.DisplayMove (i, n) x -> do
+  DisplayAction (i, n) x -> do
     T.putStrLn $ "Remove " <> T.pack (show n) <> " tokens from heap " <> T.pack (show i)
     goInter x
-  Nim.RaiseError e x -> do
+  RaiseError e x -> do
     showError e
     goInter x
 
-showInfo :: Nim.Ongoing -> T.Text
-showInfo = views Nim.heaps (showHeaps . review Nim.neh)
+showInfo :: Nim -> T.Text
+showInfo = views heaps (showHeaps . review neh)
 
 showHeaps :: NE.NonEmpty Natural -> T.Text
 showHeaps h = let
@@ -49,23 +49,23 @@ showHeaps h = let
   toVertical = T.transpose . fmap (T.reverse . T.pack) . NE.toList
   in T.intercalate "\n" . toVertical $ fmap line h
 
-askIndex :: Nim.Player -> Nim.Ongoing -> IO Natural
+askIndex :: Player Nim -> Nim -> IO Natural
 askIndex = const . const $ putStrLn "Enter a valid Heap index" >> safeRead
 
-askNbTokens :: Nim.Player -> Natural -> Nim.Ongoing -> IO Natural
+askNbTokens :: Player Nim -> Natural -> Nim -> IO Natural
 askNbTokens =
   const . const . const $ putStrLn "Enter a valid number of tokens" >> safeRead
 
 safeRead :: IO Natural
 safeRead = fmap read $ getLine
 
-showError :: Nim.MoveError -> IO ()
-showError (Nim.InvalidIndex _)  = putStrLn "This index is invalid"
-showError (Nim.InvalidTokens _) = putStrLn "Not enough tokens here"
+showError :: Err Nim -> IO ()
+showError (InvalidIndex _)  = putStrLn "This index is invalid"
+showError (InvalidTokens _) = putStrLn "Not enough tokens here"
 
-playerName :: Nim.Player -> T.Text
-playerName (Nim.FirstPlayer  _) = "Player1"
-playerName (Nim.SecondPlayer _) = "Player2"
+playerName :: Player Nim -> T.Text
+playerName (FirstPlayer  _) = "Player1"
+playerName (SecondPlayer _) = "Player2"
 
-showScore :: Nim.Finished -> IO ()
-showScore = views Nim.winner (T.putStrLn . (<> " won") . playerName)
+showScore :: End Nim -> IO ()
+showScore = views winner (T.putStrLn . (<> " won") . playerName)
