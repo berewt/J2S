@@ -17,6 +17,7 @@ module J2S
   , runGame
   ) where
 
+import Control.Applicative
 import Control.Monad.Trans
 import Control.Monad.Trans.Either
 
@@ -44,12 +45,10 @@ play = fmap fromLeft' -- fromLeft' is ok only Left can get out of iterateM
 
 gameEngine :: (BoardInfo b, Functor (Inter b), Monad (Inter b))
            => b -> EitherT (End b) (Inter b) b
-gameEngine i = let
-  p = nextPlayer i
-  in do
-    a  <- lift $ askAction i p
-    i' <- runEitherT $ executeAction i a
-    either (\e -> lift (informOnError e) >> gameEngine i) return $ i'
+gameEngine i = do
+  a  <- lift $ askAction <*> nextPlayer $ i
+  i' <- runEitherT $ executeAction i a
+  either (\e -> lift (informOnError e) >> gameEngine i) return $ i'
 
 runGame :: (BoardInfo b, Functor (Inter b), Monad (Inter b))
         => (forall a. Inter b a -> IO a) -> (End b -> IO ()) -> b -> IO ()
