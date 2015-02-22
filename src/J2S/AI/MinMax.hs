@@ -37,17 +37,17 @@ minMax b = do
   return $ foldForest e . nextPlayer <*> fromGame d $ b
 
 foldForest :: (BoardInfo b, Ord s)
-           => Eval (Player b) (End b) b s
+           => Eval (Player b) a b s
            -> Player b
-           -> PlayForest (Action b) (End b) b
+           -> PlayForest (Action b) a b
            -> Action b
 foldForest e p =
     fst . maximumBy (comparing snd) . fmap (fmap (e p . foldTree e))
 
 foldTree :: (BoardInfo b, Ord s)
-         => Eval (Player b) (End b) b s
-         -> PlayTree (End b) b
-         -> Either (End b) b
+         => Eval (Player b) a b s
+         -> PlayTree a b
+         -> Either a b
 foldTree e = let
   go (NL.L l) = l
   go (NL.N c xs) = maximumBy (comparing $ e (nextPlayer c)) xs
