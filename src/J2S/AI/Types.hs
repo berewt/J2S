@@ -23,7 +23,7 @@ type PlayTree e a     = NL.NLTree a (Either e a)
 
 type Eval p e a s = p -> Either e a -> s
 
-type Strategy a m = a -> m
+type Strategy m b = b -> m (Action b)
 
 class ListableActions b where
   listActions :: b -> NE.NonEmpty (Action b, Either (End b) b)

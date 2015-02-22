@@ -30,11 +30,11 @@ data MinMaxParam b s
 makeLenses ''MinMaxParam
 
 minMax :: (BoardInfo b, ListableActions b, Ord s)
-       => Reader (MinMaxParam b s) (Strategy b (Action b))
-minMax = do
+       => Strategy (Reader (MinMaxParam b s)) b
+minMax b = do
   d <- asks (view depth)
   e <- asks (view eval)
-  return $ foldForest e . nextPlayer <*> fromGame d
+  return $ foldForest e . nextPlayer <*> fromGame d $ b
 
 foldForest :: (BoardInfo b, Ord s)
            => Eval (Player b) (End b) b s
