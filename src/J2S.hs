@@ -18,7 +18,7 @@ module J2S
   ) where
 
 import Control.Applicative
-import Control.Monad.Trans
+import Control.Monad.Except
 import Control.Monad.Trans.Either
 
 import Control.Monad.Loops
@@ -34,7 +34,7 @@ type family Player b
 class BoardInfo b where
   nextPlayer    :: b     -> Player b
   executeAction :: b     -> Action b
-                -> EitherT (Err b) (EitherT (End b) (Inter b)) b
+                -> ExceptT (Err b) (EitherT (End b) (Inter b)) b
   askAction     :: b     -> Player b -> Inter b (Action b)
   informOnError :: Err b -> Inter b ()
 
@@ -47,7 +47,7 @@ gameEngine :: (BoardInfo b, Functor (Inter b), Monad (Inter b))
            => b -> EitherT (End b) (Inter b) b
 gameEngine i = do
   a  <- lift $ askAction <*> nextPlayer $ i
-  i' <- runEitherT $ executeAction i a
+  i' <- runExceptT $ executeAction i a
   either (\e -> lift (informOnError e) >> gameEngine i) return $ i'
 
 runGame :: (BoardInfo b, Functor (Inter b), Monad (Inter b))

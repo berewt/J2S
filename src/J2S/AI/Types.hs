@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE TypeFamilies #-}
 
 module J2S.AI.Types
@@ -18,26 +17,26 @@ import Numeric.Natural
 
 import J2S
 
-type PlayForest m e a = NE.NonEmpty (m, PlayTree e a)
-type PlayTree e a     = NL.NLTree a (Either e a)
+type PlayForest b = NE.NonEmpty (Action b, PlayTree b)
+type PlayTree b   = NL.NLTree b (Either (End b) b)
 
-type Eval p e a s = p -> Either e a -> s
+type Eval b s = Either (End b) b -> s
 
 type Strategy m b = b -> m (Action b)
 
 class ListableActions b where
   listActions :: b -> NE.NonEmpty (Action b, Either (End b) b)
 
-fromGame :: ListableActions a
+fromGame :: ListableActions b
          => Natural
-         -> a
-         -> PlayForest (Action a) (End a) a
+         -> b
+         -> PlayForest b
 fromGame d = fmap (fmap $ unfoldMoves d) . listActions
 
-unfoldMoves :: ListableActions a
+unfoldMoves :: ListableActions b
             => Natural
-            -> Either (End a) a
-            -> PlayTree (End a) a
+            -> Either (End b) b
+            -> PlayTree b
 unfoldMoves = let
   nextBoards = fmap snd . listActions
   go 0   x         = NL.L x

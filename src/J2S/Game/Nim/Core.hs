@@ -23,8 +23,8 @@ import Control.Lens
 import Control.Zipper
 
 import Control.Monad
+import Control.Monad.Except
 import Control.Monad.Free
-import Control.Monad.Trans
 import Control.Monad.Trans.Either
 
 import qualified Data.List.NonEmpty as NE
@@ -104,24 +104,24 @@ buildHeapZipper = fromWithin traverse . zipper . views heaps (review neh)
 modifyHeap :: (Monad m)
            => J.Action Nim
            -> Top :>> NE.NonEmpty Natural :>> Natural
-           -> EitherT (J.Err Nim) m (NE.NonEmpty Natural)
+           -> ExceptT (J.Err Nim) m (NE.NonEmpty Natural)
 modifyHeap (i, n) = moveToIndex i >=> popHeap n
 
 moveToIndex :: (Monad m)
            => Natural
            -> Top :>> NE.NonEmpty Natural :>> Natural
-           -> EitherT (J.Err Nim) m (Top :>> NE.NonEmpty Natural :>> Natural)
+           -> ExceptT (J.Err Nim) m (Top :>> NE.NonEmpty Natural :>> Natural)
 moveToIndex i = let
-  handleError = maybe (left $ InvalidIndex i) return
+  handleError = maybe (throwError $ InvalidIndex i) return
   move = jerks rightward (fromIntegral i)
   in handleError . move
 
 popHeap :: (Monad m)
         => Natural
         -> Top :>> NE.NonEmpty Natural :>> Natural
-        -> EitherT (J.Err Nim) m (NE.NonEmpty Natural)
+        -> ExceptT (J.Err Nim) m (NE.NonEmpty Natural)
 popHeap n = let
-  handleError = maybe (left $ InvalidTokens n) (return . rezip)
+  handleError = maybe (throwError $ InvalidTokens n) (return . rezip)
   pop = focus (safeSubtract n)
   in handleError . pop
 
