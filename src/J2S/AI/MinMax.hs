@@ -1,17 +1,18 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 module J2S.AI.MinMax
-  ( MinMaxParam (..)
+  ( MinMaxParam (MinMaxParam)
   , minMax
   ) where
 
 import Control.Lens
 import Control.Monad.Reader
-import Control.Monad.State
 
 import qualified Data.Foldable as F (maximum, maximumBy, minimum)
 import Data.Functor ((<$>))
 import qualified Data.Functor.Foldable as FF
+import Data.NLTree
+import qualified Data.List.NonEmpty as NE
 import Data.Ord (comparing)
 import qualified Data.NLTree as NL
 import qualified Data.Traversable as T
@@ -42,25 +43,24 @@ changePhase :: Phase -> Phase
 changePhase Max = Min
 changePhase Min = Max
 
-foldForest :: (BoardInfo b, Ord s)
-           => Eval b s
-           -> PlayForest b
-           -> Action b
+foldForest :: Ord s
+           => (Either a b -> s)
+           -> NE.NonEmpty (c, NLTree b (Either a b))
+           -> c
 foldForest e = let
-    evalTree = fmap $ fmap (flip evalState Max . foldTree e)
+    evalTree = fmap $ fmap (flip runReader Min . foldTree e)
     in fst . F.maximumBy (comparing snd) . evalTree
 
 
-foldTree :: (BoardInfo b, Ord s)
-         => Eval b s
-         -> PlayTree b
-         -> State Phase s
+foldTree :: Ord s
+         => (Either a b -> s)
+         -> NLTree b (Either a b)
+         -> Reader Phase s
 foldTree e = let
   selector Max = F.maximum
   selector Min = F.minimum
   go (NL.L l) = return $ e l
   go (NL.N _ xs) = do
-    s <- gets selector
-    modify changePhase
-    s <$> T.sequence xs
+    s <- asks selector
+    s <$> withReader changePhase (T.sequence xs)
   in FF.cata go

@@ -32,11 +32,11 @@ goInter (Free f) = case f of
     n <- askNbTokens p i info
     goInter $ g (i, n)
   DisplayAction (i, n) x -> do
-    T.putStrLn $ "Remove " <> T.pack (show n) <> " tokens from heap " <> T.pack (show i)
+    T.putStrLn
+      $ "Remove " <> T.pack (show n) <> " tokens from heap " <> T.pack (show i)
     goInter x
-  RaiseError e x -> do
-    showError e
-    goInter x
+  RaiseError e x ->
+    showError e >> goInter x
 
 showInfo :: Nim -> T.Text
 showInfo = views heaps (showHeaps . review neh)

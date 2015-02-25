@@ -4,4 +4,4 @@ module J2S.AI
 
 import J2S.AI.EvalAll as AI
 import J2S.AI.MinMax as AI
-import J2S.AI.Type as AI
+import J2S.AI.Types as AI

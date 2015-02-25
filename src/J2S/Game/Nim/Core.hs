@@ -19,6 +19,7 @@ module J2S.Game.Nim.Core
   , neh
   ) where
 
+import Control.Applicative
 import Control.Lens
 import Control.Zipper
 
@@ -28,10 +29,12 @@ import Control.Monad.Free
 import Control.Monad.Trans.Either
 
 import qualified Data.List.NonEmpty as NE
+import Data.Either (partitionEithers)
 
 import Numeric.Natural
 
 import qualified J2S as J
+import qualified J2S.AI as J
 import J2S.Game.Nim.Types
 
 data Nim
@@ -39,14 +42,14 @@ data Nim
   { _activePlayer :: J.Player Nim
   , _otherPlayer   :: J.Player Nim
   , _heaps        :: NonEmptyHeaps
-  }
+  } deriving (Eq, Read, Show)
 
 data EndNim
   = EndNim
   { _winner    :: J.Player Nim
   , _loser     :: J.Player Nim
   , _nbOfHeaps :: Natural
-  }
+  } deriving (Eq, Read, Show)
 
 type instance J.End Nim = EndNim
 
@@ -67,12 +70,12 @@ data instance J.Err Nim
 data NimPlayer
   = FirstPlayer PlayerType
   | SecondPlayer PlayerType
-  deriving (Eq, Ord)
+  deriving (Eq, Ord, Read, Show)
 
 type instance J.Player Nim = NimPlayer
 
 data PlayerType = Human | Computer
-  deriving (Eq, Ord)
+  deriving (Eq, Ord, Read, Show)
 
 makeLenses '' Nim
 makeLenses '' EndNim
@@ -85,29 +88,36 @@ instance J.BoardInfo Nim where
   nextPlayer = view activePlayer
 
   executeAction o m = do
-    idx <- modifyHeap m $ buildHeapZipper o
-    lift $ afterAction o m idx
+    h <- modifyHeap m $ buildHeapZipper o
+    lift $ lift (inform m)
+    lift $ hoistEither (rebuildInfo o h)
 
   askAction i p = liftF $ AskAction p i id
 
   informOnError = liftF . flip RaiseError ()
 
-afterAction :: Nim
-          -> J.Action Nim
-          -> NE.NonEmpty Natural
-          -> EitherT (J.End Nim) (J.Inter Nim) Nim
-afterAction o m h = lift (inform m) >> hoistEither (rebuildInfo o h)
+instance J.ListableActions Nim where
+
+  listActions b = let
+    actions xs = [(i,n) | (i,m) <- xs, m > 0, n <- enumFromThenTo m (m-1) 1]
+    go = (NE.zip . NE.fromList <*> (NE.fromList . attachResult b)) . actions
+    in views heaps (go . zip [0..] . NE.toList . review neh) b
+
+attachResult :: Nim -> [J.Action Nim] -> [Either (J.End Nim) Nim]
+attachResult b xs = let
+  doMove m = rebuildInfo b <$> modifyHeap m (buildHeapZipper b)
+  in snd . partitionEithers $ runIdentity . runExceptT . doMove <$> xs
 
 buildHeapZipper :: Nim -> Top :>> NE.NonEmpty Natural :>> Natural
 buildHeapZipper = fromWithin traverse . zipper . views heaps (review neh)
 
-modifyHeap :: (Monad m)
+modifyHeap :: Monad m
            => J.Action Nim
            -> Top :>> NE.NonEmpty Natural :>> Natural
            -> ExceptT (J.Err Nim) m (NE.NonEmpty Natural)
 modifyHeap (i, n) = moveToIndex i >=> popHeap n
 
-moveToIndex :: (Monad m)
+moveToIndex :: Monad m
            => Natural
            -> Top :>> NE.NonEmpty Natural :>> Natural
            -> ExceptT (J.Err Nim) m (Top :>> NE.NonEmpty Natural :>> Natural)

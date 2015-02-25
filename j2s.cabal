@@ -28,6 +28,7 @@ library
     J2S.AI.EvalAll
     J2S.AI.MinMax
     J2S.AI.Random
+    J2S.Game.Nim.AI
     J2S.Game.Nim.Core
     J2S.Game.Nim.Types
     J2S.Game.Nim.TextIO

@@ -10,7 +10,6 @@ module J2S.Game.Nim.Types
   ) where
 
 import Control.Monad (mfilter)
-import Control.Monad.Trans
 import Control.Lens
 
 import qualified Data.Foldable as F
@@ -35,6 +34,7 @@ allEmpty = F.all (== 0)
 -- | A wrapper or NonEmpty lists of Natural where at least one value is superior
 --   to zero.
 newtype NonEmptyHeaps = NonEmptyHeaps { getHeaps :: NE.NonEmpty Natural }
+  deriving (Eq, Show, Read)
 
 
 newtype ANonEmpty a = ANonEmpty { aNonEmpty :: NE.NonEmpty a }

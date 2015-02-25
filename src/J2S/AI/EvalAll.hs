@@ -1,7 +1,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 module J2S.AI.EvalAll
-  ( EvalAllParam (..)
+  ( EvalAllParam (EvalAllParam)
   , depth
   , eval
   , evalAll
