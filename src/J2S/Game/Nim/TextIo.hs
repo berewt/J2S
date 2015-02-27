@@ -57,7 +57,7 @@ askNbTokens =
   const . const . const $ putStrLn "Enter a valid number of tokens" >> safeRead
 
 safeRead :: IO Natural
-safeRead = fmap read $ getLine
+safeRead = read <$> getLine
 
 showError :: Err Nim -> IO ()
 showError (InvalidIndex _)  = putStrLn "This index is invalid"

@@ -34,7 +34,6 @@ import Data.Either (partitionEithers)
 import Numeric.Natural
 
 import qualified J2S as J
-import qualified J2S.AI as J
 import J2S.Game.Nim.Types
 
 data Nim

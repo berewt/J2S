@@ -6,8 +6,8 @@ import Control.Monad.Random
 
 import qualified Data.Foldable as F
 
-import J2S
 import J2S.AI.Types
+import J2S.Engine
 
 rand :: (BoardInfo b, ListableActions b, MonadRandom m)
      => Strategy m b

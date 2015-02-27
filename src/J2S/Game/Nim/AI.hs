@@ -1,13 +1,14 @@
 module J2S.Game.Nim.AI
-  ( trivialEvalP1
+  ( trivialEval
+  , trivialEvalP1
   , trivialEvalP2
   , TrivialValuation
   ) where
 
 import Control.Lens
 
+import J2S
 import J2S.Game.Nim.Core
-import J2S.AI
 
 data TrivialValuation
   = Lose
@@ -15,6 +16,10 @@ data TrivialValuation
   | Win
   deriving (Eq, Read, Show, Ord)
 
+
+trivialEval :: Player Nim -> Eval Nim TrivialValuation
+trivialEval (FirstPlayer  _) = trivialEvalP1
+trivialEval (SecondPlayer _) = trivialEvalP2
 
 trivialEvalP1 :: Eval Nim TrivialValuation
 trivialEvalP1 (Right _) = Undecided

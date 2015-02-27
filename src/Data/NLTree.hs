@@ -45,5 +45,5 @@ instance Unfoldable (NLTree n l) where
                  L l    -> Leaf l
 
 toTree :: NLTree n l -> T.Tree (Either n l)
-toTree (Node n xs) = T.Node (Left n) (fmap toTree $ NE.toList xs)
+toTree (Node n xs) = T.Node (Left n) (toTree <$> NE.toList xs)
 toTree (Leaf l)    = T.Node (Right l) mzero

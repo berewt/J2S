@@ -6,23 +6,24 @@ module J2S.AI.MinMax
   , minMaxAB
   ) where
 
+import qualified Data.Foldable as F (maximum, maximumBy, minimum)
+import qualified Data.Functor.Foldable as FF
+import qualified Data.NLTree as NL
+import qualified Data.List.NonEmpty as NE
+import qualified Data.Traversable as T
+
 import Control.Applicative
 import Control.Lens
 import Control.Monad.Reader
 import Control.Monad.State
 
-import qualified Data.Foldable as F (maximum, maximumBy, minimum)
-import qualified Data.Functor.Foldable as FF
 import Data.NLTree
-import qualified Data.List.NonEmpty as NE
 import Data.Ord (comparing)
-import qualified Data.NLTree as NL
-import qualified Data.Traversable as T
 
 import Numeric.Natural
 
-import J2S
 import J2S.AI.Types
+import J2S.Engine
 
 data MinMaxParam b s
   = MinMaxParam
@@ -86,7 +87,7 @@ foldTreeAB = let
   comp Min = (>)
   cut p Nothing h t = return $ selector p h t
   cut p (Just cv) h t =
-    if (comp p cv t) then Left t else Right $ selector p h t
+    if comp p cv t then Left t else Right $ selector p h t
   go e (NL.L l) = return $ e l
   go _ (NL.N _ xs) = let
     in do

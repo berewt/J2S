@@ -20,8 +20,8 @@ import Data.Ord (comparing)
 
 import Numeric.Natural
 
-import J2S
 import J2S.AI.Types
+import J2S.Engine
 
 data EvalAllParam b s
   = EvalAllParam

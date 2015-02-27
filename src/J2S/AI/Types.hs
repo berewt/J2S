@@ -15,7 +15,7 @@ import qualified Data.NLTree as NL
 
 import Numeric.Natural
 
-import J2S
+import J2S.Engine
 
 type PlayForest b = NE.NonEmpty (Action b, PlayTree b)
 type PlayTree b   = NL.NLTree b (Either (End b) b)
