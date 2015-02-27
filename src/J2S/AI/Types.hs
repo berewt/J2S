@@ -7,15 +7,22 @@ module J2S.AI.Types
   , Strategy
   , ListableActions (..)
   , fromGame
+  , listActions
   ) where
 
 import qualified Data.Functor.Foldable as FF
 import qualified Data.List.NonEmpty as NE
 import qualified Data.NLTree as NL
 
+import Control.Applicative
+import Control.Monad.Except
+
+import Data.Either (partitionEithers)
+
 import Numeric.Natural
 
 import J2S.Engine
+
 
 type PlayForest b = NE.NonEmpty (Action b, PlayTree b)
 type PlayTree b   = NL.NLTree b (Either (End b) b)
@@ -24,8 +31,21 @@ type Eval b s = Either (End b) b -> s
 
 type Strategy m b = b -> m (Action b)
 
-class ListableActions b where
-  listActions :: b -> NE.NonEmpty (Action b, Either (End b) b)
+class BoardInfo b => ListableActions b where
+
+  actions :: b -> NE.NonEmpty (Action b)
+
+
+listActions :: ListableActions b
+            => b -> NE.NonEmpty (Action b, Either (End b) b)
+listActions b = let
+  go = NE.zip <*> NE.fromList . attachResult b . NE.toList
+  in go $ actions b
+
+attachResult :: BoardInfo b
+             => b -> [Action b] -> [Either (End b) b]
+attachResult b xs = snd . partitionEithers $ runExcept . executeAction b <$> xs
+
 
 fromGame :: ListableActions b
          => Natural

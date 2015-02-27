@@ -29,7 +29,6 @@ import Control.Monad.Free
 import Control.Monad.Trans.Either
 
 import qualified Data.List.NonEmpty as NE
-import Data.Either (partitionEithers)
 
 import Numeric.Natural
 
@@ -86,10 +85,10 @@ instance J.BoardInfo Nim where
 
   nextPlayer = view activePlayer
 
-  executeAction o m = do
-    h <- modifyHeap m $ buildHeapZipper o
-    lift $ lift (inform m)
-    lift $ hoistEither (rebuildInfo o h)
+  executeAction b m = rebuildInfo b <$> modifyHeap m (buildHeapZipper b)
+
+  informAction _ a r =
+    lift (liftF $ DisplayAction  a ()) >> hoistEither r
 
   askAction i p = liftF $ AskAction p i id
 
@@ -97,15 +96,9 @@ instance J.BoardInfo Nim where
 
 instance J.ListableActions Nim where
 
-  listActions b = let
-    actions xs = [(i,n) | (i,m) <- xs, m > 0, n <- enumFromThenTo m (m-1) 1]
-    go = (NE.zip . NE.fromList <*> (NE.fromList . attachResult b)) . actions
+ actions b = let
+    go xs = NE.fromList [(i,n) | (i,m) <- xs, m > 0, n <- enumFromThenTo m (m-1) 1]
     in views heaps (go . zip [0..] . NE.toList . review neh) b
-
-attachResult :: Nim -> [J.Action Nim] -> [Either (J.End Nim) Nim]
-attachResult b xs = let
-  doMove m = rebuildInfo b <$> modifyHeap m (buildHeapZipper b)
-  in snd . partitionEithers $ runIdentity . runExceptT . doMove <$> xs
 
 buildHeapZipper :: Nim -> Top :>> NE.NonEmpty Natural :>> Natural
 buildHeapZipper = fromWithin traverse . zipper . views heaps (review neh)
@@ -142,9 +135,6 @@ rebuildInfo o h = let
       (Left $ EndNim a n $ fromIntegral $ NE.length h)
       (Right . Nim n a)
       $ preview neh h
-
-inform :: J.Action Nim -> J.Inter Nim ()
-inform = liftF . flip DisplayAction ()
 
 safeSubtract :: (Ord a, Num a) => a -> a -> Maybe a
 safeSubtract x y = guard (x <= y) >> return (y - x)
