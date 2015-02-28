@@ -22,6 +22,7 @@ library
   exposed-modules:
     Data.NLTree
     J2S
+    J2S.Game.Nim
   other-modules:
     J2S.AI
     J2S.Engine
