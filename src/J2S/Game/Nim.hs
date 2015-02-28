@@ -3,7 +3,7 @@ module J2S.Game.Nim
   , N.Strategy (..)
   , N.nimConfig
   , N.textNim
-  )
+  ) where
 
-module J2S.Game.Nim.Core as N
-module J2S.Game.Nim.TextIO as N
+import J2S.Game.Nim.Core as N
+import J2S.Game.Nim.TextIO as N

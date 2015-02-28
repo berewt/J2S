@@ -9,7 +9,7 @@ maintainer:          nicolas@biri.name
 category:            Game
 build-type:          Simple
 stability: experimental
-cabal-version:       >=1.22
+cabal-version:       >=1.18
 
 source-repository head
   type: git
