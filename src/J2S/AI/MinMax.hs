@@ -23,7 +23,6 @@ import Data.Ord (comparing)
 import Numeric.Natural
 
 import J2S.AI.Types
-import J2S.Engine
 
 data MinMaxParam b s
   = MinMaxParam
@@ -33,14 +32,14 @@ data MinMaxParam b s
 
 makeLenses ''MinMaxParam
 
-minMax :: (BoardInfo b, ListableActions b, Ord s)
+minMax :: (ListableActions b, Ord s)
        => Strategy (Reader (MinMaxParam b s)) b
 minMax b = do
   d <- asks (view depth)
   e <- asks (view eval)
   return $ foldForest e . fromGame d $ b
 
-minMaxAB :: (BoardInfo b, ListableActions b, Ord s)
+minMaxAB :: (ListableActions b, Ord s)
          => Strategy (Reader (MinMaxParam b s)) b
 minMaxAB b = do
   d <- asks (view depth)

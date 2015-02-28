@@ -4,39 +4,62 @@ module J2S.Game.Nim.TextIO
   ( textNim
   ) where
 
-import Control.Applicative
-import Control.Lens
-import Control.Monad.Free
-
-import Numeric.Natural
-
-import Data.Monoid ((<>), mappend)
 import qualified Data.Foldable as F
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
+import qualified J2S.AI as J
 
-import J2S
+
+import Control.Applicative
+import Control.Lens
+import Control.Monad.Free
+import Control.Monad.IO.Class
+import Control.Monad.Random
+import Control.Monad.Reader
+
+import Data.Monoid ((<>), mappend)
+
+import Numeric.Natural
+
+import J2S.Engine
 import J2S.Game.Nim.Core
+import J2S.Game.Nim.AI
 
-textNim :: Nim -> IO ()
-textNim = runGame goInter showScore
+textNim :: RandomGen g => g -> Nim -> IO ()
+textNim gen = runGame (flip evalRandT gen . goInter) showScore
 
-goInter :: Inter Nim a -> IO a
+goInter :: (MonadRandom m, MonadIO m) => Inter Nim a -> m a
 goInter (Pure x) = return x
 goInter (Free f) = case f of
   AskAction p info g -> do
-    T.putStrLn $ playerName p <> "'s turn:"
-    T.putStrLn $ showInfo info
-    i <- askIndex p info
-    n <- askNbTokens p i info
-    goInter $ g (i, n)
+    liftIO . T.putStrLn $ playerName p <> "'s turn:"
+    liftIO . T.putStrLn $ showInfo info
+    a <- askPlayer p info
+    goInter $ g a
   DisplayAction (i, n) x -> do
-    T.putStrLn
+    liftIO . T.putStrLn
       $ "Remove " <> T.pack (show n) <> " tokens from heap " <> T.pack (show i)
     goInter x
   RaiseError e x ->
-    showError e >> goInter x
+    liftIO $ showError e >> goInter x
+
+askPlayer :: (MonadRandom m, MonadIO m) => Player Nim -> Nim -> m (Action Nim)
+askPlayer p info = case playerType p of
+  Human -> do
+    i <- askIndex
+    n <- askNbTokens
+    return (i, n)
+  Computer Random -> J.rand info
+  Computer MinMax -> return . flip runReader (buildMMParam p info) $ J.minMaxAB info
+
+buildMMParam :: Player Nim -> Nim -> J.MinMaxParam Nim TrivialValuation
+buildMMParam p _ = let
+  depth = 4
+  eval = case p of
+              (FirstPlayer  _) -> trivialEvalP1
+              (SecondPlayer _) -> trivialEvalP2
+  in J.MinMaxParam depth eval
 
 showInfo :: Nim -> T.Text
 showInfo = views heaps (showHeaps . review neh)
@@ -49,12 +72,11 @@ showHeaps h = let
   toVertical = T.transpose . fmap (T.reverse . T.pack) . NE.toList
   in T.intercalate "\n" . toVertical $ fmap line h
 
-askIndex :: Player Nim -> Nim -> IO Natural
-askIndex = const . const $ putStrLn "Enter a valid Heap index" >> safeRead
+askIndex :: MonadIO m => m Natural
+askIndex = liftIO $ putStrLn "Enter a valid Heap index" >> safeRead
 
-askNbTokens :: Player Nim -> Natural -> Nim -> IO Natural
-askNbTokens =
-  const . const . const $ putStrLn "Enter a valid number of tokens" >> safeRead
+askNbTokens :: MonadIO m => m Natural
+askNbTokens = liftIO $ putStrLn "Enter a valid number of tokens" >> safeRead
 
 safeRead :: IO Natural
 safeRead = read <$> getLine

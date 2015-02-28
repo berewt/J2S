@@ -45,6 +45,7 @@ library
     , MonadRandom       >= 0.3  && < 0.4
     , mtl               >= 2.2  && < 2.3
     , nats              >= 1    && < 2
+    , random            >= 1.1  && < 1.2
     , recursion-schemes >= 4.1  && < 5
     , semigroups        >= 0.16 && < 0.17
     , text              >= 1.2  && < 1.3

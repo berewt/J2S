@@ -15,7 +15,9 @@ module J2S.Game.Nim.Core
   , InteractionF (..)
   , PlayerType (..)
   , NimPlayer (..)
+  , playerType
   , J.Err (..)
+  , Strategy (..)
   , neh
   ) where
 
@@ -72,7 +74,14 @@ data NimPlayer
 
 type instance J.Player Nim = NimPlayer
 
-data PlayerType = Human | Computer
+playerType :: NimPlayer -> PlayerType
+playerType (FirstPlayer  p) = p
+playerType (SecondPlayer p) = p
+
+data Strategy = Random | MinMax
+  deriving (Eq, Ord, Read, Show)
+
+data PlayerType = Human | Computer Strategy
   deriving (Eq, Ord, Read, Show)
 
 makeLenses '' Nim
@@ -99,6 +108,7 @@ instance J.ListableActions Nim where
  actions b = let
     go xs = NE.fromList [(i,n) | (i,m) <- xs, m > 0, n <- enumFromThenTo m (m-1) 1]
     in views heaps (go . zip [0..] . NE.toList . review neh) b
+
 
 buildHeapZipper :: Nim -> Top :>> NE.NonEmpty Natural :>> Natural
 buildHeapZipper = fromWithin traverse . zipper . views heaps (review neh)
@@ -135,6 +145,7 @@ rebuildInfo o h = let
       (Left $ EndNim a n $ fromIntegral $ NE.length h)
       (Right . Nim n a)
       $ preview neh h
+
 
 safeSubtract :: (Ord a, Num a) => a -> a -> Maybe a
 safeSubtract x y = guard (x <= y) >> return (y - x)

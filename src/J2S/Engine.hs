@@ -54,6 +54,6 @@ runAction :: (BoardInfo b, Monad (Inter b))
 runAction b ac =
   either throwE (lift . informAction b ac) . runExcept $ executeAction b ac
 
-runGame :: (BoardInfo b, Functor (Inter b), Monad (Inter b))
-        => (forall a. Inter b a -> IO a) -> (End b -> IO ()) -> b -> IO ()
+runGame :: (BoardInfo b, Functor (Inter b), Monad (Inter b), Monad m)
+        => (forall a. Inter b a -> m a) -> (End b -> m ()) -> b -> m ()
 runGame it ds initBoard = it (play initBoard) >>= ds

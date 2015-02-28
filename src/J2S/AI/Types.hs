@@ -33,6 +33,9 @@ type Strategy m b = b -> m (Action b)
 
 class BoardInfo b => ListableActions b where
 
+  -- |
+  -- Should verify:
+  -- forall x. isRight $ runExcept traverse executeAction $ actions x
   actions :: b -> NE.NonEmpty (Action b)
 
 
