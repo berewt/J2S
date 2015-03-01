@@ -1,6 +1,5 @@
 # J2S
 
-J2S is ease the development of Boardgame engines.
-At this stage, it only provides a global engine.
+J2S provides a framework for the devleopment of boardgames.
 
-Later, it will provides real boardgame examples and some AI.
+It provides a basic engine to run the game and a few startegies for AI.
