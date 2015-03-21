@@ -4,27 +4,27 @@ module J2S.Game.Nim.TextIO
   ( textNim
   ) where
 
-import qualified Data.Foldable as F
-import qualified Data.List.NonEmpty as NE
-import qualified Data.Text as T
-import qualified Data.Text.IO as T
-import qualified J2S.AI as J
+import qualified Data.Foldable          as F
+import qualified Data.List.NonEmpty     as NE
+import qualified Data.Text              as T
+import qualified Data.Text.IO           as T
+import qualified J2S.AI                 as J
 
 
-import Control.Applicative
-import Control.Lens
-import Control.Monad.Free
-import Control.Monad.IO.Class
-import Control.Monad.Random
-import Control.Monad.Reader
+import           Control.Applicative
+import           Control.Lens
+import           Control.Monad.Free
+import           Control.Monad.IO.Class
+import           Control.Monad.Random
+import           Control.Monad.Reader
 
-import Data.Monoid ((<>), mappend)
+import           Data.Monoid            (mappend, (<>))
 
-import Numeric.Natural
+import           Numeric.Natural
 
-import J2S.Engine
-import J2S.Game.Nim.Core
-import J2S.Game.Nim.AI
+import           J2S.Engine
+import           J2S.Game.Nim.AI
+import           J2S.Game.Nim.Core
 
 textNim :: RandomGen g => g -> Nim -> IO ()
 textNim gen = runGame (flip evalRandT gen . goInter) showScore

@@ -5,10 +5,10 @@ module J2S.Game.Nim.AI
   , TrivialValuation
   ) where
 
-import Control.Lens
+import           Control.Lens
 
-import J2S
-import J2S.Game.Nim.Core
+import           J2S
+import           J2S.Game.Nim.Core
 
 data TrivialValuation
   = Lose

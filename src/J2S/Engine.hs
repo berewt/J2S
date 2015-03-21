@@ -1,6 +1,6 @@
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE RankNTypes       #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module J2S.Engine
   ( Inter
@@ -12,14 +12,14 @@ module J2S.Engine
   , runGame
   ) where
 
-import Control.Applicative
-import Control.Monad.Trans
-import Control.Monad.Trans.Either
-import Control.Monad.Trans.Except
+import           Control.Applicative
+import           Control.Monad.Trans
+import           Control.Monad.Trans.Either
+import           Control.Monad.Trans.Except
 
-import Control.Monad.Loops
+import           Control.Monad.Loops
 
-import Data.Either.Combinators (fromLeft')
+import           Data.Either.Combinators    (fromLeft')
 
 data family Err b
 type family Inter b :: * -> *

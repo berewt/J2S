@@ -5,5 +5,5 @@ module J2S.Game.Nim
   , N.textNim
   ) where
 
-import J2S.Game.Nim.Core as N
-import J2S.Game.Nim.TextIO as N
+import           J2S.Game.Nim.Core   as N
+import           J2S.Game.Nim.TextIO as N

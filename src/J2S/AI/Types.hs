@@ -11,17 +11,17 @@ module J2S.AI.Types
   ) where
 
 import qualified Data.Functor.Foldable as FF
-import qualified Data.List.NonEmpty as NE
-import qualified Data.NLTree as NL
+import qualified Data.List.NonEmpty    as NE
+import qualified Data.NLTree           as NL
 
-import Control.Applicative
-import Control.Monad.Except
+import           Control.Applicative
+import           Control.Monad.Except
 
-import Data.Either (partitionEithers)
+import           Data.Either           (partitionEithers)
 
-import Numeric.Natural
+import           Numeric.Natural
 
-import J2S.Engine
+import           J2S.Engine
 
 
 type PlayForest b = NE.NonEmpty (Action b, PlayTree b)

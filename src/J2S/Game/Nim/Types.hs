@@ -9,16 +9,15 @@ module J2S.Game.Nim.Types
   , neh
   ) where
 
-import Control.Monad (mfilter)
-import Control.Lens
-
-import qualified Data.Foldable as F
-
-import qualified Test.QuickCheck as Q
-
+import qualified Data.Foldable      as F
 import qualified Data.List.NonEmpty as NE
 
-import Numeric.Natural
+import qualified Test.QuickCheck    as Q
+
+import           Control.Lens
+import           Control.Monad      (mfilter)
+
+import           Numeric.Natural
 
 -- | A prism from NonEmpty lists of Natural to NonEmptyHeaps
 -- | prop> maybe True (> 0) . previews neh (sum . getHeaps) . fmap aNatural . aNonEmpty

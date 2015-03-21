@@ -1,7 +1,7 @@
+{-# LANGUAGE DeriveFunctor   #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE TypeFamilies    #-}
+{-# LANGUAGE TypeOperators   #-}
 
 module J2S.Game.Nim.Core
   ( nimConfig
@@ -21,26 +21,26 @@ module J2S.Game.Nim.Core
   , neh
   ) where
 
-import Control.Applicative
-import Control.Lens
-import Control.Zipper
+import           Control.Applicative
+import           Control.Lens
+import           Control.Zipper
 
-import Control.Monad
-import Control.Monad.Except
-import Control.Monad.Free
-import Control.Monad.Trans.Either
+import           Control.Monad
+import           Control.Monad.Except
+import           Control.Monad.Free
+import           Control.Monad.Trans.Either
 
-import qualified Data.List.NonEmpty as NE
+import qualified Data.List.NonEmpty         as NE
 
-import Numeric.Natural
+import           Numeric.Natural
 
-import qualified J2S as J
-import J2S.Game.Nim.Types
+import qualified J2S                        as J
+import           J2S.Game.Nim.Types
 
 data Nim
   = Nim
   { _activePlayer :: J.Player Nim
-  , _otherPlayer   :: J.Player Nim
+  , _otherPlayer  :: J.Player Nim
   , _heaps        :: NonEmptyHeaps
   } deriving (Eq, Read, Show)
 
@@ -106,7 +106,8 @@ instance J.BoardInfo Nim where
 instance J.ListableActions Nim where
 
  actions b = let
-    go xs = NE.fromList [(i,n) | (i,m) <- xs, m > 0, n <- enumFromThenTo m (m-1) 1]
+    go xs =
+      NE.fromList [(i,n) | (i,m) <- xs, m > 0, n <- enumFromThenTo m (m-1) 1]
     in views heaps (go . zip [0..] . NE.toList . review neh) b
 
 
