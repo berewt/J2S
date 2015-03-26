@@ -93,7 +93,7 @@ foldTreeAB = let
       p <- ask
       cutValue <- get
       put Nothing
-      (h NE.:| t) <-  local changePhase $ T.sequence xs
+      (h NE.:| t) <- local changePhase $ T.sequence xs
       let score = foldM (cut p cutValue) h t
       liftA2 (>>) (put . return) return $ either id id score
   in FF.cata . go
