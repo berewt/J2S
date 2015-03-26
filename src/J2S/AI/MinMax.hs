@@ -1,5 +1,5 @@
-{-# LANGUAGE TemplateHaskell #-}
-{-# FlexibleContexts         #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TemplateHaskell  #-}
 
 module J2S.AI.MinMax
   ( MinMaxParam (MinMaxParam)

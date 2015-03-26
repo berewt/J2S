@@ -27,7 +27,6 @@ library
     J2S.AI
     J2S.Engine
     J2S.AI.Types
-    J2S.AI.EvalAll
     J2S.AI.MaxN
     J2S.AI.MinMax
     J2S.AI.Random

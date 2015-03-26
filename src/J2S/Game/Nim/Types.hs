@@ -1,4 +1,5 @@
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module J2S.Game.Nim.Types
   ( ANatural
@@ -9,13 +10,14 @@ module J2S.Game.Nim.Types
   , neh
   ) where
 
+import           Control.Applicative
+import           Control.Lens
+import           Control.Monad      (mfilter)
+
 import qualified Data.Foldable      as F
 import qualified Data.List.NonEmpty as NE
 
 import qualified Test.QuickCheck    as Q
-
-import           Control.Lens
-import           Control.Monad      (mfilter)
 
 import           Numeric.Natural
 
@@ -35,6 +37,13 @@ allEmpty = F.all (== 0)
 newtype NonEmptyHeaps = NonEmptyHeaps { getHeaps :: NE.NonEmpty Natural }
   deriving (Eq, Show, Read)
 
+instance Q.Arbitrary NonEmptyHeaps where
+
+  arbitrary = NonEmptyHeaps <$> Q.oneof
+    [ fmap (fmap aNatural) $ (NE.:|) <$> (succ <$> Q.arbitrary) <*> Q.arbitrary
+    , NE.cons 0 <$> (getHeaps <$> Q.arbitrary)
+    ]
+
 
 newtype ANonEmpty a = ANonEmpty { aNonEmpty :: NE.NonEmpty a }
   deriving (Eq, Show, Read)
@@ -48,7 +57,7 @@ instance Q.Arbitrary a => Q.Arbitrary (ANonEmpty a) where
 
 
 newtype ANatural = ANatural { aNatural :: Natural }
- deriving (Eq, Show, Read)
+ deriving (Eq, Show, Read, Enum, Num)
 
 instance Q.Arbitrary ANatural where
 

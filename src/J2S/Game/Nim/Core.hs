@@ -34,6 +34,8 @@ import qualified Data.List.NonEmpty         as NE
 
 import           Numeric.Natural
 
+import qualified Test.QuickCheck            as Q
+
 import qualified J2S                        as J
 import           J2S.Game.Nim.Types
 
@@ -43,6 +45,13 @@ data Nim
   , _otherPlayer  :: J.Player Nim
   , _heaps        :: NonEmptyHeaps
   } deriving (Eq, Read, Show)
+
+instance Q.Arbitrary Nim where
+  arbitrary = let
+    p1 = FirstPlayer  <$> Q.arbitrary
+    p2 = SecondPlayer <$> Q.arbitrary
+    ps = Q.oneof [(,) <$> p1 <*> p2, (,) <$> p2 <*> p1]
+    in uncurry Nim <$> ps <*> Q.arbitrary
 
 data EndNim
   = EndNim
@@ -81,8 +90,15 @@ playerType (SecondPlayer p) = p
 data Strategy = Random | MinMax
   deriving (Eq, Ord, Read, Show)
 
+instance Q.Arbitrary Strategy where
+  arbitrary = Q.elements [Random, MinMax]
+
 data PlayerType = Human | Computer Strategy
   deriving (Eq, Ord, Read, Show)
+
+instance Q.Arbitrary PlayerType where
+  arbitrary = Q.oneof [return Human, Computer <$> Q.arbitrary]
+
 
 makeLenses '' Nim
 makeLenses '' EndNim

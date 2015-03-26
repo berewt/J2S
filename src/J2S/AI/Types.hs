@@ -66,3 +66,5 @@ unfoldMoves = let
   go _ l@(Left _)  = NL.L l
   go n   (Right a) = NL.N a (NE.zip (NE.repeat $ pred n) $ nextBoards a)
   in curry (FF.ana $ uncurry go)
+
+

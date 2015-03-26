@@ -7,10 +7,12 @@ module J2S.AI.MaxN
   , depth
   , eval
   , maxN
+  , paranoid
   ) where
 
 import qualified Data.Functor.Foldable as FF
 import qualified Data.List.NonEmpty    as NE
+import qualified Data.Maybe            as M
 import qualified Data.NLTree           as NL
 
 import           Control.Applicative
@@ -28,8 +30,9 @@ import           J2S.Engine
 
 data MaxNParam b s
   = MaxNParam
-  { _depth :: Natural
-  , _eval  :: Eval b [(Player b, s)]
+  { _depth     :: Natural
+  , _eval      :: Eval b [(Player b, s)]
+  , _orderEval :: GlobalEval s -> GlobalEval s -> Ordering
   }
 
 data GlobalEval v
@@ -63,34 +66,39 @@ maxN :: (BoardInfo b, ListableActions b, Ord s, Num s, Eq (Player b))
 maxN b = do
   d <- asks (view depth)
   e <- asks (view eval)
-  return $ foldForest e . nextPlayer <*> fromGame d $ b
+  o <- asks (view orderEval)
+  return $ foldForest o e . nextPlayer <*> fromGame d $ b
 
 foldForest :: (BoardInfo b, Ord v, Num v, Eq (Player b))
-           => Eval b [(Player b, v)]
+           => (GlobalEval v -> GlobalEval v -> Ordering)
+           -> Eval b [(Player b, v)]
            -> Player b
            -> NE.NonEmpty (c, PlayTree b)
            -> c
-foldForest e r =
-  fst . maximumBy (paranoidEval r r `on` snd) . fmap (foldTree e r <$>)
+foldForest o e r = let
+  toValue = M.fromMaybe (error "Root player should have a score") . toGlobalEval r r . snd
+  in fst . maximumBy (paranoid `on` toValue) . fmap (foldTree o e r <$>)
 
 foldTree :: (BoardInfo b, Ord v, Num v, Eq (Player b))
-         => Eval b [(Player b, v)]
+         => (GlobalEval v -> GlobalEval v -> Ordering)
+         -> Eval b [(Player b, v)]
          -> Player b
          -> PlayTree b
          -> [(Player b, v)]
-foldTree e r = let
+foldTree o e r = let
   go (NL.L l) = e l
-  go (NL.N c xs) = maximumBy (paranoidEval r (nextPlayer c)) xs
+  go (NL.N c xs) = maximumBy (chooseValue o r (nextPlayer c)) xs
   in FF.cata go
 
-paranoidEval :: (Eq k, Ord v, Num v)
-             => k
+chooseValue  :: (Eq k, Ord v, Num v)
+             => (GlobalEval v -> GlobalEval v -> Ordering)
+             -> k
              -> k
              -> [(k, v)] -> [(k, v)] -> Ordering
-paranoidEval r a s1 s2= either id id $ do
+chooseValue o r a s1 s2= either id id $ do
   gs1 <- maybe (Left GT) return $ toGlobalEval r a s1
   gs2 <- maybe (Left LT) return $ toGlobalEval r a s2
-  return $ paranoid gs1 gs2
+  return $ o gs1 gs2
 
 paranoid :: (Ord s, Num s) => GlobalEval s -> GlobalEval s -> Ordering
 paranoid = let

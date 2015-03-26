@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeFamilies  #-}
 
 module Data.NLTree
   ( NLTree (..)
@@ -7,12 +7,15 @@ module Data.NLTree
   , toTree
   ) where
 
-import Control.Applicative
-import Control.Monad
+import           Control.Applicative
+import           Control.Monad
 
-import Data.Functor.Foldable
-import qualified Data.Tree as T
-import qualified Data.List.NonEmpty as NE
+import           Data.Functor.Foldable
+import qualified Data.Tree             as T
+import qualified Data.List.NonEmpty    as NE
+
+import qualified Test.QuickCheck       as Q
+
 
 data NLTree n l
   = Node n (NE.NonEmpty (NLTree n l))
@@ -43,6 +46,18 @@ instance Unfoldable (NLTree n l) where
   apo f a = case f a of
                  N n xs -> Node n $ fmap (either id $ apo f) xs
                  L l    -> Leaf l
+
+instance (Q.Arbitrary n, Q.Arbitrary l) => Q.Arbitrary (NLTree n l) where
+
+  arbitrary = Q.oneof [aNode, aLeaf]
+
+aLeaf :: Q.Arbitrary l => Q.Gen (NLTree n l)
+aLeaf = Leaf <$> Q.arbitrary
+
+aNode :: (Q.Arbitrary n, Q.Arbitrary l) => Q.Gen (NLTree n l)
+aNode = let
+  cs = (NE.:|) <$> Q.arbitrary <*> Q.arbitrary
+  in Node <$> Q.arbitrary <*> cs
 
 toTree :: NLTree n l -> T.Tree (Either n l)
 toTree (Node n xs) = T.Node (Left n) (toTree <$> NE.toList xs)
