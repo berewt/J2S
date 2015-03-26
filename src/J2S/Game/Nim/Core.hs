@@ -47,11 +47,8 @@ data Nim
   } deriving (Eq, Read, Show)
 
 instance Q.Arbitrary Nim where
-  arbitrary = let
-    p1 = FirstPlayer  <$> Q.arbitrary
-    p2 = SecondPlayer <$> Q.arbitrary
-    ps = Q.oneof [(,) <$> p1 <*> p2, (,) <$> p2 <*> p1]
-    in uncurry Nim <$> ps <*> Q.arbitrary
+
+  arbitrary = uncurry Nim <$> arbitraryPlayers <*> Q.arbitrary
 
 data EndNim
   = EndNim
@@ -59,6 +56,17 @@ data EndNim
   , _loser     :: J.Player Nim
   , _nbOfHeaps :: Natural
   } deriving (Eq, Read, Show)
+
+instance Q.Arbitrary EndNim where
+
+  arbitrary = uncurry EndNim <$> arbitraryPlayers <*> (aNatural <$> Q.arbitrary)
+
+
+arbitraryPlayers :: Q.Gen (NimPlayer, NimPlayer)
+arbitraryPlayers = let
+  p1 = FirstPlayer  <$> Q.arbitrary
+  p2 = SecondPlayer <$> Q.arbitrary
+  in Q.oneof [(,) <$> p1 <*> p2, (,) <$> p2 <*> p1]
 
 type instance J.End Nim = EndNim
 
@@ -121,7 +129,7 @@ instance J.BoardInfo Nim where
 
 instance J.ListableActions Nim where
 
- actions b = let
+ actions = let
     go xs =
       NE.fromList [(i,n) | (i,m) <- xs, m > 0, n <- enumFromThenTo m (m-1) 1]
     in views (heaps . neh) (go . zip [0..] . NE.toList) b
