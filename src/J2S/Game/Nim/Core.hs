@@ -131,7 +131,7 @@ instance J.ListableActions Nim where
 
  actions = let
     go i n = (,) (fromIntegral i) <$> enumFromThenTo n (n - 1) 1
-    in views (heaps . re neh) (NE.fromList . ifoldMap go . NE.toList)
+    in views (heaps . re neh) (NE.fromList . ifoldMap go)
 
 
 buildHeapZipper :: Nim -> Top :>> NE.NonEmpty Natural :>> Natural
