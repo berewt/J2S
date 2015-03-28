@@ -132,11 +132,11 @@ instance J.ListableActions Nim where
  actions = let
     go xs =
       NE.fromList [(i,n) | (i,m) <- xs, m > 0, n <- enumFromThenTo m (m-1) 1]
-    in views (heaps . neh) (go . zip [0..] . NE.toList) b
+    in views (heaps . re neh) (go . zip [0..] . NE.toList)
 
 
 buildHeapZipper :: Nim -> Top :>> NE.NonEmpty Natural :>> Natural
-buildHeapZipper = fromWithin traverse . zipper . neh . heaps
+buildHeapZipper = views (heaps . re neh) (fromWithin traverse . zipper)
 
 modifyHeap :: Monad m
            => J.Action Nim
