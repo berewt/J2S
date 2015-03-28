@@ -130,9 +130,8 @@ instance J.BoardInfo Nim where
 instance J.ListableActions Nim where
 
  actions = let
-    go xs =
-      NE.fromList [(i,n) | (i,m) <- xs, m > 0, n <- enumFromThenTo m (m-1) 1]
-    in views (heaps . re neh) (go . zip [0..] . NE.toList)
+    go i n = (,) (fromIntegral i) <$> enumFromThenTo n (n - 1) 1
+    in views (heaps . re neh) (NE.fromList . ifoldMap go . NE.toList)
 
 
 buildHeapZipper :: Nim -> Top :>> NE.NonEmpty Natural :>> Natural
