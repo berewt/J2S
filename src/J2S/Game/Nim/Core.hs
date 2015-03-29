@@ -46,27 +46,12 @@ data Nim
   , _heaps        :: NonEmptyHeaps
   } deriving (Eq, Read, Show)
 
-instance Q.Arbitrary Nim where
-
-  arbitrary = uncurry Nim <$> arbitraryPlayers <*> Q.arbitrary
-
 data EndNim
   = EndNim
   { _winner    :: J.Player Nim
   , _loser     :: J.Player Nim
   , _nbOfHeaps :: Natural
   } deriving (Eq, Read, Show)
-
-instance Q.Arbitrary EndNim where
-
-  arbitrary = uncurry EndNim <$> arbitraryPlayers <*> (aNatural <$> Q.arbitrary)
-
-
-arbitraryPlayers :: Q.Gen (NimPlayer, NimPlayer)
-arbitraryPlayers = let
-  p1 = FirstPlayer  <$> Q.arbitrary
-  p2 = SecondPlayer <$> Q.arbitrary
-  in Q.oneof [(,) <$> p1 <*> p2, (,) <$> p2 <*> p1]
 
 type instance J.End Nim = EndNim
 
@@ -111,8 +96,13 @@ instance Q.Arbitrary PlayerType where
 makeLenses '' Nim
 makeLenses '' EndNim
 
-nimConfig :: PlayerType -> PlayerType -> NonEmptyHeaps -> Nim
+--| Create a Nim game
+nimConfig :: PlayerType    --| First Player's Type
+          -> PlayerType    --| Second Player's Type
+          -> NonEmptyHeaps --| Initial Heaps Configuration
+          -> Nim
 nimConfig p1 p2 = Nim (FirstPlayer p1) (SecondPlayer p2)
+
 
 instance J.BoardInfo Nim where
 
@@ -127,12 +117,15 @@ instance J.BoardInfo Nim where
 
   informOnError = liftF . flip RaiseError ()
 
+
 instance J.ListableActions Nim where
 
  actions = let
     go i n = (,) (fromIntegral i) <$> enumFromThenTo n (n - 1) 1
     in views (heaps . re neh) (NE.fromList . ifoldMap go)
 
+
+-- Helpers for actions
 
 buildHeapZipper :: Nim -> Top :>> NE.NonEmpty Natural :>> Natural
 buildHeapZipper = views (heaps . re neh) (fromWithin traverse . zipper)
@@ -171,5 +164,27 @@ rebuildInfo o h = let
       $ preview neh h
 
 
+-- Helper for Naturals
+
 safeSubtract :: (Ord a, Num a) => a -> a -> Maybe a
 safeSubtract x y = guard (x <= y) >> return (y - x)
+
+
+-- QuickCheck instances
+
+instance Q.Arbitrary Nim where
+
+  arbitrary = uncurry Nim <$> arbitraryPlayers <*> Q.arbitrary
+
+instance Q.Arbitrary EndNim where
+
+  arbitrary = uncurry EndNim <$> arbitraryPlayers <*> (aNatural <$> Q.arbitrary)
+
+
+arbitraryPlayers :: Q.Gen (NimPlayer, NimPlayer)
+arbitraryPlayers = let
+  p1 = FirstPlayer  <$> Q.arbitrary
+  p2 = SecondPlayer <$> Q.arbitrary
+  in Q.oneof [(,) <$> p1 <*> p2, (,) <$> p2 <*> p1]
+
+
