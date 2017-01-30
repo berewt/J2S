@@ -14,7 +14,6 @@ import qualified Data.Functor.Foldable as FF
 import qualified Data.List.NonEmpty    as NE
 import qualified Data.NLTree           as NL
 
-import           Control.Applicative
 import           Control.Monad.Except
 
 import           Data.Either           (partitionEithers)

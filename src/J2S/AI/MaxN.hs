@@ -14,7 +14,6 @@ import qualified Data.List.NonEmpty    as NE
 import qualified Data.Maybe            as M
 import qualified Data.NLTree           as NL
 
-import           Control.Applicative
 import           Control.Lens
 import           Control.Monad.Reader
 
@@ -60,7 +59,7 @@ toGlobalEval r a ss = do
 makeLenses ''MaxNParam
 makeLenses ''GlobalEval
 
-maxN :: (BoardInfo b, ListableActions b, Ord s, Num s, Eq (Player b))
+maxN :: (ListableActions b, Ord s, Num s, Eq (Player b))
      => Strategy (Reader (MaxNParam b s)) b
 maxN b = do
   d <- asks (view depth)
@@ -78,7 +77,7 @@ foldForest o e r = let
   toValue = M.fromMaybe (error "Root player should have a score") . toGlobalEval r r . snd
   in fst . maximumBy (paranoid `on` toValue) . fmap (foldTree o e r <$>)
 
-foldTree :: (BoardInfo b, Ord v, Num v, Eq (Player b))
+foldTree :: (BoardInfo b, Eq (Player b))
          => (GlobalEval v -> GlobalEval v -> Ordering)
          -> Eval b [(Player b, v)]
          -> Player b
@@ -89,7 +88,7 @@ foldTree o e r = let
   go (NL.N c xs) = maximumBy (chooseValue o r (nextPlayer c)) xs
   in FF.cata go
 
-chooseValue  :: (Eq k, Ord v, Num v)
+chooseValue  :: Eq k
              => (GlobalEval v -> GlobalEval v -> Ordering)
              -> k
              -> k

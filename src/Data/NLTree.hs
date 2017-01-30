@@ -3,11 +3,10 @@
 
 module Data.NLTree
   ( NLTree (..)
-  , Prim (..)
+  , NLTreeF (..)
   , toTree
   ) where
 
-import           Control.Applicative
 import           Control.Monad
 
 import           Data.Functor.Foldable
@@ -23,14 +22,14 @@ data NLTree n l
   deriving (Eq, Read, Show)
 
 
-data instance Prim (NLTree n l) x
+data NLTreeF n l x
   = N n (NE.NonEmpty x)
   | L l
   deriving (Functor, Read, Show)
 
-type instance Base (NLTree n l) = Prim (NLTree n l)
+type instance Base (NLTree n l) = NLTreeF n l
 
-instance Foldable (NLTree n l) where
+instance Recursive (NLTree n l) where
 
   project (Node n xs) = N n xs
   project (Leaf l)    = L l
@@ -38,7 +37,7 @@ instance Foldable (NLTree n l) where
   para f (Node n xs) = f $ N n (fmap ((,) <*> para f) xs)
   para f (Leaf l)    = f $ L l
 
-instance Unfoldable (NLTree n l) where
+instance Corecursive (NLTree n l) where
 
   embed (N n xs) = Node n xs
   embed (L l)    = Leaf l

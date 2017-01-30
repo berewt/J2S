@@ -21,7 +21,6 @@ module J2S.Game.Nim.Core
   , neh
   ) where
 
-import           Control.Applicative
 import           Control.Lens
 import           Control.Zipper
 
@@ -83,23 +82,16 @@ playerType (SecondPlayer p) = p
 data Strategy = Random | MinMax
   deriving (Eq, Ord, Read, Show)
 
-instance Q.Arbitrary Strategy where
-  arbitrary = Q.elements [Random, MinMax]
-
 data PlayerType = Human | Computer Strategy
   deriving (Eq, Ord, Read, Show)
-
-instance Q.Arbitrary PlayerType where
-  arbitrary = Q.oneof [return Human, Computer <$> Q.arbitrary]
-
 
 makeLenses '' Nim
 makeLenses '' EndNim
 
---| Create a Nim game
-nimConfig :: PlayerType    --| First Player's Type
-          -> PlayerType    --| Second Player's Type
-          -> NonEmptyHeaps --| Initial Heaps Configuration
+-- | Create a Nim game
+nimConfig :: PlayerType    -- | First Player's Type
+          -> PlayerType    -- | Second Player's Type
+          -> NonEmptyHeaps -- | Initial Heaps Configuration
           -> Nim
 nimConfig p1 p2 = Nim (FirstPlayer p1) (SecondPlayer p2)
 
@@ -180,11 +172,14 @@ instance Q.Arbitrary EndNim where
 
   arbitrary = uncurry EndNim <$> arbitraryPlayers <*> (aNatural <$> Q.arbitrary)
 
-
 arbitraryPlayers :: Q.Gen (NimPlayer, NimPlayer)
 arbitraryPlayers = let
   p1 = FirstPlayer  <$> Q.arbitrary
   p2 = SecondPlayer <$> Q.arbitrary
   in Q.oneof [(,) <$> p1 <*> p2, (,) <$> p2 <*> p1]
 
+instance Q.Arbitrary Strategy where
+  arbitrary = Q.elements [Random, MinMax]
 
+instance Q.Arbitrary PlayerType where
+  arbitrary = Q.oneof [return Human, Computer <$> Q.arbitrary]
