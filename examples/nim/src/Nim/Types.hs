@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module J2S.Game.Nim.Types
+module Nim.Types
   ( ANatural
   , aNatural
   , ANonEmpty

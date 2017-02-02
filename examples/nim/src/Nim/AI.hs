@@ -1,4 +1,4 @@
-module J2S.Game.Nim.AI
+module Nim.AI
   ( trivialEval
   , trivialEvalP1
   , trivialEvalP2
@@ -8,7 +8,7 @@ module J2S.Game.Nim.AI
 import           Control.Lens
 
 import           J2S
-import           J2S.Game.Nim.Core
+import           Nim.Core
 
 data TrivialValuation
   = Lose

@@ -1,0 +1,56 @@
+name:                nim
+version:             0.1.0.0
+synopsis:            Initial project template from stack
+description:         Please see README.md
+homepage:            https://github.com/berewt/nim#readme
+license:             BSD3
+license-file:        LICENSE
+author:              Nicolas Biri
+maintainer:          nicolas@biri.name
+copyright:           2017 - All right reserved
+category:            Web
+build-type:          Simple
+extra-source-files:  README.md
+cabal-version:       >=1.10
+
+library
+  hs-source-dirs:      src
+  exposed-modules:     Nim
+  other-modules:       Nim.AI
+                     , Nim.Core
+                     , Nim.Types
+                     , Nim.TextIO
+  build-depends:       base        >= 4.7 && < 5
+                     , either      >= 4.3  && < 4.5
+                     , free        >= 4.10 && < 4.13
+                     , j2s         >= 0.2.0 && < 0.3
+                     , QuickCheck  >= 2.7  && < 2.10
+                     , lens        >= 4.8 && < 4.16
+                     , MonadRandom >= 0.3  && < 0.5
+                     , mtl         >= 2.2  && < 2.3
+                     , text        >= 1.2  && < 1.3
+                     , zippers     >= 0.2  && < 0.3
+  default-language:    Haskell2010
+
+executable nim-exe
+  hs-source-dirs:      app
+  main-is:             Main.hs
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  build-depends:       base
+                     , nim
+                     , lens   >= 4.8 && < 4.16
+                     , random >= 1.1  && < 2
+  default-language:    Haskell2010
+
+test-suite nim-test
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      test
+  main-is:             Spec.hs
+  build-depends:       base
+                     , nim
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  default-language:    Haskell2010
+
+source-repository head
+  type:     git
+  location: https://github.com/berewt/nim

@@ -9,6 +9,6 @@ import qualified Data.Foldable        as F
 import           J2S.AI.Types
 import           J2S.Engine
 
-rand :: (BoardInfo b, ListableActions b, MonadRandom m)
+rand :: (ListableActions b, MonadRandom m)
      => Strategy m b
 rand = uniform . fmap fst . F.toList . listActions

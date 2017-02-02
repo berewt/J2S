@@ -3,7 +3,7 @@
 {-# LANGUAGE TypeFamilies    #-}
 {-# LANGUAGE TypeOperators   #-}
 
-module J2S.Game.Nim.Core
+module Nim.Core
   ( nimConfig
   , Nim
   , activePlayer
@@ -36,7 +36,7 @@ import           Numeric.Natural
 import qualified Test.QuickCheck            as Q
 
 import qualified J2S                        as J
-import           J2S.Game.Nim.Types
+import           Nim.Types
 
 data Nim
   = Nim
@@ -113,8 +113,8 @@ instance J.BoardInfo Nim where
 instance J.ListableActions Nim where
 
  actions = let
-    go i n = (,) (fromIntegral i) <$> enumFromThenTo n (n - 1) 1
-    in views (heaps . re neh) (NE.fromList . ifoldMap go)
+   go i n = (,) (fromIntegral i) <$> if n == 0 then [] else enumFromThenTo n (n - 1) 1
+   in views (heaps . re neh) (NE.fromList . ifoldMap go)
 
 
 -- Helpers for actions
@@ -159,7 +159,7 @@ rebuildInfo o h = let
 -- Helper for Naturals
 
 safeSubtract :: (Ord a, Num a) => a -> a -> Maybe a
-safeSubtract x y = guard (x <= y) >> return (y - x)
+safeSubtract x y = guard (x > 0 && x <= y) >> return (y - x)
 
 
 -- QuickCheck instances

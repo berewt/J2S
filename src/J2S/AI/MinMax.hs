@@ -60,7 +60,7 @@ foldForest e = let
     evalTree = fmap $ fmap (flip runReader Min . foldTree e)
     in fst . F.maximumBy (comparing snd) . evalTree
 
-foldTree :: (Ord s, Functor m, MonadReader Phase m)
+foldTree :: (Ord s, MonadReader Phase m)
          => (a -> s) -> NL.NLTree b a -> m s
 foldTree e = let
   selector Max = F.maximum

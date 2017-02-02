@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module J2S.Game.Nim.TextIO
+module Nim.TextIO
   ( textNim
   ) where
 
@@ -8,7 +8,6 @@ import qualified Data.Foldable          as F
 import qualified Data.List.NonEmpty     as NE
 import qualified Data.Text              as T
 import qualified Data.Text.IO           as T
-import qualified J2S.AI                 as J
 
 
 import           Control.Applicative
@@ -22,9 +21,9 @@ import           Data.Monoid            (mappend, (<>))
 
 import           Numeric.Natural
 
-import           J2S.Engine
-import           J2S.Game.Nim.AI
-import           J2S.Game.Nim.Core
+import           J2S                    as J
+import           Nim.AI
+import           Nim.Core
 
 textNim :: RandomGen g => g -> Nim -> IO ()
 textNim gen = runGame (flip evalRandT gen . goInter) showScore
@@ -83,6 +82,7 @@ safeRead = read <$> getLine
 
 showError :: Err Nim -> IO ()
 showError (InvalidIndex _)  = putStrLn "This index is invalid"
+showError (InvalidTokens 0) = putStrLn "You should at least remove one token"
 showError (InvalidTokens _) = putStrLn "Not enough tokens here"
 
 playerName :: Player Nim -> T.Text
