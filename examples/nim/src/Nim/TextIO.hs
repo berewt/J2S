@@ -69,7 +69,7 @@ showHeaps h = let
   line = liftA2 mappend (flip replicate 'x') (flip replicate ' ' . (m -))
          . fromIntegral
   toVertical = T.transpose . fmap (T.reverse . T.pack) . NE.toList
-  in T.intercalate "\n" . toVertical $ fmap line h
+  in T.intercalate "\n" . toVertical . fmap line $ NE.intersperse 0 h
 
 askIndex :: MonadIO m => m Natural
 askIndex = liftIO $ putStrLn "Enter a valid Heap index" >> safeRead
