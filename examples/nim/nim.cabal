@@ -20,6 +20,7 @@ library
                      , Nim.Core
                      , Nim.Types
                      , Nim.TextIO
+  ghc-options:         -Wall
   build-depends:       base        >= 4.7 && < 5
                      , either      >= 4.3  && < 4.5
                      , free        >= 4.10 && < 4.13
@@ -40,15 +41,6 @@ executable nim-exe
                      , nim
                      , lens   >= 4.8 && < 4.16
                      , random >= 1.1  && < 2
-  default-language:    Haskell2010
-
-test-suite nim-test
-  type:                exitcode-stdio-1.0
-  hs-source-dirs:      test
-  main-is:             Spec.hs
-  build-depends:       base
-                     , nim
-  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   default-language:    Haskell2010
 
 source-repository head
