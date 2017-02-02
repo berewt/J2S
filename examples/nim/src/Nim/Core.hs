@@ -96,7 +96,7 @@ nimConfig :: PlayerType    -- | First Player's Type
 nimConfig p1 p2 = Nim (FirstPlayer p1) (SecondPlayer p2)
 
 
-instance J.BoardInfo Nim where
+instance J.Game Nim where
 
   nextPlayer = view activePlayer
 
