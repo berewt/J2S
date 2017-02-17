@@ -13,7 +13,7 @@ Portability: POSIX
 
   This modules contain the generic definition for the definition of a game.
   A game is defined by the definition of a datatype that gather all the game information
-  And an typeclass instance of 'BoardInfo' for ths datatype. The 'BoardInfo' typeclass
+  And an typeclass instance of 'Game' for ths datatype. The 'Game' typeclass
   defines the functions required to implements the game logic.
 
 -}
@@ -23,7 +23,7 @@ module J2S.Engine
   , End
   , Err
   , Player
-  , BoardInfo (..)
+  , Game (..)
   , runGame
   ) where
 
@@ -53,7 +53,7 @@ type family End b
 type family Player b
 
 -- | This class define the wohe behaviour of a game
-class BoardInfo b where
+class Game b where
   -- | Given a ongoing game configuration, returns the next player
   nextPlayer    :: b     -> Player b
   -- | Apply an action to a game configuration. Returns an error if the Actin is not allowed.
@@ -70,14 +70,14 @@ class BoardInfo b where
   informOnError :: Err b -> Inter b ()
 
 -- | Play a game from its initial configuration to the end
-play :: (BoardInfo b, Monad (Inter b))
+play :: (Game b, Monad (Inter b))
      => b -> Inter b (End b)
 play = fmap fromLeft' -- fromLeft' is ok: only Left can get out of iterateM
                . runEitherT . iterateM_ gameEngine
 
 -- | Play a game turn
 -- (repeatidly ask an action to the active player until she provides a valid one)
-gameEngine :: (BoardInfo b, Monad (Inter b))
+gameEngine :: (Game b, Monad (Inter b))
            => b -> EitherT (End b) (Inter b) b
 gameEngine i = do
   a  <- lift $ askAction <*> nextPlayer $ i
@@ -85,7 +85,7 @@ gameEngine i = do
   either (\e -> lift (informOnError e) >> gameEngine i) return i'
 
 -- | Run on the game the given action
-runAction :: (BoardInfo b, Monad (Inter b))
+runAction :: (Game b, Monad (Inter b))
           => b
           -> Action b
           -> ExceptT (Err b) (EitherT (End b) (Inter b)) b
@@ -93,6 +93,6 @@ runAction b ac =
   either throwE (lift . informAction b ac) . runExcept $ executeAction b ac
 
 -- | execute the game with the given interpreter for interactions
-runGame :: (BoardInfo b, Monad (Inter b), Monad m)
+runGame :: (Game b, Monad (Inter b), Monad m)
         => (forall a. Inter b a -> m a) -> (End b -> m ()) -> b -> m ()
 runGame it ds initBoard = it (play initBoard) >>= ds

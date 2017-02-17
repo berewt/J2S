@@ -67,7 +67,7 @@ maxN b = do
   o <- asks (view orderEval)
   return $ foldForest o e . nextPlayer <*> fromGame d $ b
 
-foldForest :: (BoardInfo b, Ord v, Num v, Eq (Player b))
+foldForest :: (Game b, Ord v, Num v, Eq (Player b))
            => (GlobalEval v -> GlobalEval v -> Ordering)
            -> Eval b [(Player b, v)]
            -> Player b
@@ -77,7 +77,7 @@ foldForest o e r = let
   toValue = M.fromMaybe (error "Root player should have a score") . toGlobalEval r r . snd
   in fst . maximumBy (paranoid `on` toValue) . fmap (foldTree o e r <$>)
 
-foldTree :: (BoardInfo b, Eq (Player b))
+foldTree :: (Game b, Eq (Player b))
          => (GlobalEval v -> GlobalEval v -> Ordering)
          -> Eval b [(Player b, v)]
          -> Player b
