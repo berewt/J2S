@@ -34,7 +34,7 @@ type instance J.End MockGame    = EndMockGame
 type instance J.Player MockGame = Natural
 
 
-instance J.BoardInfo MockGame where
+instance J.Game MockGame where
 
   nextPlayer = head . players
 
