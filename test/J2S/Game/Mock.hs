@@ -5,7 +5,7 @@ module J2S.Game.Mock where
 import           Control.Applicative
 import           Control.Monad.Except
 import           Control.Monad.Identity
-import           Control.Monad.Trans.Either
+import           Control.Monad.Trans.Except
 
 import qualified Data.List.NonEmpty         as NE
 
@@ -41,7 +41,7 @@ instance J.Game MockGame where
   executeAction b a = maybe (throwError $ Err ()) return
                       . lookup a . NE.toList $ boardActions b
 
-  informAction = const $ const $ hoistEither
+  informAction = const $ const $ except
 
   askAction = const . const $ return 42
 

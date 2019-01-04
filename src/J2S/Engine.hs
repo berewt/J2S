@@ -28,7 +28,6 @@ module J2S.Engine
   ) where
 
 import           Control.Monad.Trans
-import           Control.Monad.Trans.Either
 import           Control.Monad.Trans.Except
 
 import           Control.Monad.Loops
@@ -62,7 +61,7 @@ class Game b where
   -- | Given the initial board, a valid action and its result, it returns an interaction
   -- to display if any.
   informAction  :: b     -> Action b -> Either (End b) b
-                -> EitherT (End b) (Inter b) b
+                -> ExceptT (End b) (Inter b) b
   -- | Given a game context and a player, returns the interation required to ask this player
   -- her next move
   askAction     :: b     -> Player b -> Inter b (Action b)
@@ -73,12 +72,12 @@ class Game b where
 play :: (Game b, Monad (Inter b))
      => b -> Inter b (End b)
 play = fmap fromLeft' -- fromLeft' is ok: only Left can get out of iterateM
-               . runEitherT . iterateM_ gameEngine
+               . runExceptT . iterateM_ gameEngine
 
 -- | Play a game turn
 -- (repeatidly ask an action to the active player until she provides a valid one)
 gameEngine :: (Game b, Monad (Inter b))
-           => b -> EitherT (End b) (Inter b) b
+           => b -> ExceptT (End b) (Inter b) b
 gameEngine i = do
   a  <- lift $ askAction <*> nextPlayer $ i
   i' <- runExceptT $ runAction i a
@@ -88,7 +87,7 @@ gameEngine i = do
 runAction :: (Game b, Monad (Inter b))
           => b
           -> Action b
-          -> ExceptT (Err b) (EitherT (End b) (Inter b)) b
+          -> ExceptT (Err b) (ExceptT (End b) (Inter b)) b
 runAction b ac =
   either throwE (lift . informAction b ac) . runExcept $ executeAction b ac
 
