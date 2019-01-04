@@ -2,11 +2,11 @@
 
 J2S provides a framework to simplify the development of games
 
-It provides a basic engine to run the game and a few startegies for AI.
+It provides a basic engine to run the game and a few AI strategies.
 
 ## How to start?
 
-The easiest way to start is to have a look at the [Nim example](examples/Nim)
+The easiest way to start is to have a look at the [Nim example](tree/master/examples/nim)
 
 ## Current limitations
 
