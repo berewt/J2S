@@ -6,7 +6,7 @@ It provides a basic engine to run the game and a few AI strategies.
 
 ## How to start?
 
-The easiest way to start is to have a look at the [Nim example](tree/master/examples/nim)
+The easiest way to start is to have a look at the [Nim example](https://github.com/berewt/J2S/tree/master/examples/nim)
 
 ## Current limitations
 
