@@ -1,5 +1,5 @@
 name:                nim
-version:             0.1.0.0
+version:             0.1.1.0
 synopsis:            Initial project template from stack
 description:         Please see README.md
 homepage:            https://github.com/berewt/nim#readme
@@ -21,16 +21,17 @@ library
                      , Nim.Types
                      , Nim.TextIO
   ghc-options:         -Wall
-  build-depends:       base        >= 4.7 && < 5
-                     , either      >= 4.3  && < 4.5
-                     , free        >= 4.10 && < 4.13
-                     , j2s         >= 0.2.0 && < 0.3
-                     , QuickCheck  >= 2.7  && < 2.10
-                     , lens        >= 4.8 && < 4.16
-                     , MonadRandom >= 0.3  && < 0.5
-                     , mtl         >= 2.2  && < 2.3
-                     , text        >= 1.2  && < 1.3
-                     , zippers     >= 0.2  && < 0.3
+  build-depends:       base         >= 4.7 && < 5
+                     , either       >= 4.3  && < 5.1
+                     , free         >= 4.10 && < 5.2
+                     , j2s          >= 0.2.0 && < 0.3
+                     , QuickCheck   >= 2.7  && < 2.13
+                     , lens         >= 4.8 && < 4.18
+                     , MonadRandom  >= 0.3  && < 0.6
+                     , mtl          >= 2.2  && < 2.3
+                     , text         >= 1.2  && < 1.3
+                     , transformers >= 0.4  && < 0.6
+                     , zippers      >= 0.2  && < 0.3
   default-language:    Haskell2010
 
 executable nim-exe
@@ -39,10 +40,10 @@ executable nim-exe
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
                      , nim
-                     , lens   >= 4.8 && < 4.16
+                     , lens   >= 4.8 && < 4.18
                      , random >= 1.1  && < 2
   default-language:    Haskell2010
 
 source-repository head
   type:     git
-  location: https://github.com/berewt/nim
+  location: https://github.com/berewt/J2S/tree/master/examples/nim

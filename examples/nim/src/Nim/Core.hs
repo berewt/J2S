@@ -27,7 +27,7 @@ import           Control.Zipper
 import           Control.Monad
 import           Control.Monad.Except
 import           Control.Monad.Free
-import           Control.Monad.Trans.Either
+import           Control.Monad.Trans.Except
 
 import qualified Data.List.NonEmpty         as NE
 
@@ -103,7 +103,7 @@ instance J.Game Nim where
   executeAction b m = rebuildInfo b <$> modifyHeap m (buildHeapZipper b)
 
   informAction _ a r =
-    lift (liftF $ DisplayAction  a ()) >> hoistEither r
+    lift (liftF $ DisplayAction  a ()) >> liftEither r
 
   askAction i p = liftF $ AskAction p i id
 

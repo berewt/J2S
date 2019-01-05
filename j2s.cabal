@@ -1,5 +1,5 @@
 name:                j2s
-version:             0.3.0
+version:             0.2.1
 synopsis:            A core library for boardgame design
 homepage:            https://github.com/berewt/j2s
 license:             MIT
@@ -13,7 +13,7 @@ cabal-version:       >=1.18
 
 source-repository head
   type: git
-  location: git@github.com:berewt/j2s.git
+  location: git@github.com:berewt/J2S.git
 
 -- configuration for building a library
 library
