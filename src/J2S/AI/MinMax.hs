@@ -1,6 +1,17 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TemplateHaskell  #-}
 
+{- |
+ MinMax (or minimax) algorithm for 'Game'.
+
+ The module provides both an unpruned version 'minMax'
+ and a AB-pruned version 'minMaxAB'.
+ There is not reason to use the unpruned version over the pruned one.
+ The unpruned version is only there for educational purpose.
+
+ See the wikipedia [Minimax](https://en.wikipedia.org/wiki/Minimax#Minimax_algorithm_with_alternate_moves)
+ webpage if you want to know momre about minimax.
+-}
 module J2S.AI.MinMax
   ( MinMaxParam (MinMaxParam)
   , minMax
@@ -24,9 +35,12 @@ import           Numeric.Natural
 
 import           J2S.AI.Types
 
+-- Parameter for a min max algorithm
 data MinMaxParam b s
   = MinMaxParam
-  { _depth :: Natural
+  { -- | How many play in advance should we look to take a decision?
+    _depth :: Natural
+    -- | How do we evaluate the board configurations?
   , _eval :: Eval b s
   }
 
@@ -38,16 +52,18 @@ minMax :: (ListableActions b, Ord s)
 minMax b = do
   d <- asks (view depth)
   e <- asks (view eval)
-  return $ foldForest e . fromGame d $ b
+  pure $ foldForest e . fromGame d $ b
 
 minMaxAB :: (ListableActions b, Ord s)
          => Strategy (Reader (MinMaxParam b s)) b
 minMaxAB b = do
   d <- asks (view depth)
   e <- asks (view eval)
-  return $ foldForestAB e . fromGame d $ b
+  pure $ foldForestAB e . fromGame d $ b
 
 
+-- | Flag to indicate whether we try to maimize our socre (our turn)
+-- or to minimze it (opponent's turn)
 data Phase = Max | Min
 
 changePhase :: Phase -> Phase
@@ -65,7 +81,7 @@ foldTree :: (Ord s, MonadReader Phase m)
 foldTree e = let
   selector Max = F.maximum
   selector Min = F.minimum
-  go (NL.L l) = return $ e l
+  go (NL.L l) = pure (e l)
   go (NL.N _ xs) = do
     s <- asks selector
     s <$> local changePhase (T.sequence xs)
@@ -85,15 +101,17 @@ foldTreeAB = let
   selector Min = min
   comp Max = (<)
   comp Min = (>)
-  cut p Nothing c n = return $ selector p c n
-  cut p (Just cv) c n =
-    if comp p cv n then Left n else Right $ selector p c n
-  go e (NL.L l) = return $ e l
+  cut phase Nothing c n = pure (selector phase c n)
+  cut phase (Just cv) c n =
+    if comp phase cv n
+       then Left n
+       else Right $ selector phase c n
+  go e (NL.L l) = pure $ e l
   go _ (NL.N _ xs) = do
       p <- ask
       cutValue <- get
       put Nothing
       (h NE.:| t) <- local changePhase $ T.sequence xs
       let score = foldM (cut p cutValue) h t
-      liftA2 (>>) (put . return) return $ either id id score
+      liftA2 (>>) (put . pure) pure $ either id id score
   in FF.cata . go

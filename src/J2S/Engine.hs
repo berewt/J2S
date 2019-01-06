@@ -71,27 +71,37 @@ class Game b where
 -- | Play a game from its initial configuration to the end
 play :: (Game b, Monad (Inter b))
      => b -> Inter b (End b)
-play = fmap fromLeft' -- fromLeft' is ok: only Left can get out of iterateM
-               . runExceptT . iterateM_ gameEngine
+play = let
+  getEndResult = fmap fromLeft' -- fromLeft' is ok: only Left can get out of iterateM
+  iterateTurns = iterateM_ gameEngine
+  in getEndResult . runExceptT . iterateTurns
 
 -- | Play a game turn
 -- (repeatidly ask an action to the active player until she provides a valid one)
 gameEngine :: (Game b, Monad (Inter b))
            => b -> ExceptT (End b) (Inter b) b
-gameEngine i = do
-  a  <- lift $ askAction <*> nextPlayer $ i
-  i' <- runExceptT $ runAction i a
-  either (\e -> lift (informOnError e) >> gameEngine i) return i'
+gameEngine boardConfig = let
+  getNextPlayerAction = lift . (askAction <*> nextPlayer)
+  retryOnErrorOrContinue cfg = either
+    (\e -> lift (informOnError e) >> gameEngine cfg)
+    pure
+  in do
+    action          <- getNextPlayerAction boardConfig
+    nextBoardConfig <- runExceptT $ runAction boardConfig action
+    retryOnErrorOrContinue boardConfig nextBoardConfig
 
--- | Run on the game the given action
+-- | Run  the given action on the game
 runAction :: (Game b, Monad (Inter b))
           => b
           -> Action b
           -> ExceptT (Err b) (ExceptT (End b) (Inter b)) b
-runAction b ac =
-  either throwE (lift . informAction b ac) . runExcept $ executeAction b ac
+runAction boardConfig action = either
+  throwE
+  (lift . informAction boardConfig action)
+  (runExcept $ executeAction boardConfig action)
 
 -- | execute the game with the given interpreter for interactions
 runGame :: (Game b, Monad (Inter b), Monad m)
         => (forall a. Inter b a -> m a) -> (End b -> m ()) -> b -> m ()
-runGame it ds initBoard = it (play initBoard) >>= ds
+runGame informationInterpreter endGameInterpreter initBoard =
+  informationInterpreter (play initBoard) >>= endGameInterpreter

@@ -47,12 +47,13 @@ class Game b => ListableActions b where
 -- paired with the resulting game state
 listActions :: ListableActions b
             => b -> NE.NonEmpty (Action b, Either (End b) b)
-listActions b = let
-  go = NE.zip <*> NE.fromList . attachResult b . NE.toList
-  in go $ actions b
+listActions boardConfig = let
+  go = NE.zip <*> NE.fromList . attachResult boardConfig . NE.toList
+  in go $ actions boardConfig
 
 attachResult :: Game b => b -> [Action b] -> [Either (End b) b]
-attachResult b xs = snd . partitionEithers $ runExcept . executeAction b <$> xs
+attachResult boardConfig =
+  snd . partitionEithers . fmap (runExcept . executeAction boardConfig)
 
 
 -- | Create a 'PlayForest' after `d` moves, starting from the given game state
@@ -60,7 +61,7 @@ fromGame :: ListableActions b
          => Natural
          -> b
          -> PlayForest b
-fromGame d = fmap (fmap $ unfoldMoves d) . listActions
+fromGame depth = fmap (fmap $ unfoldMoves depth) . listActions
 
 unfoldMoves :: ListableActions b
             => Natural
@@ -70,7 +71,5 @@ unfoldMoves = let
   nextBoards = fmap snd . listActions
   go 0   x         = NL.L x
   go _ l@(Left _)  = NL.L l
-  go n   (Right a) = NL.N a (NE.zip (NE.repeat $ pred n) $ nextBoards a)
+  go n (Right action) = NL.N action (NE.zip (NE.repeat $ pred n) (nextBoards action))
   in curry (FF.ana $ uncurry go)
-
-

@@ -15,13 +15,14 @@ import qualified Data.List.NonEmpty    as NE
 
 import qualified Test.QuickCheck       as Q
 
-
+-- | NL-Tree (NodeLeaf-Tree) are trees that carry one type of informatino in
+-- | their internal nodes and another type at their leaves.
 data NLTree n l
   = Node n (NE.NonEmpty (NLTree n l))
   | Leaf l
   deriving (Eq, Read, Show)
 
-
+-- ! Base Functor for NL-Tree
 data NLTreeF n l x
   = N n (NE.NonEmpty x)
   | L l
