@@ -21,6 +21,11 @@ import qualified Test.QuickCheck    as Q
 
 import           Numeric.Natural
 
+-- | A wrapper or NonEmpty lists of Natural where at least one value is superior
+--   to zero.
+newtype NonEmptyHeaps = NonEmptyHeaps { getHeaps :: NE.NonEmpty Natural }
+  deriving (Eq, Show, Read)
+
 -- | A prism from NonEmpty lists of Natural to NonEmptyHeaps
 -- | prop> maybe True (> 0) . previews neh (sum . getHeaps) . fmap aNatural . aNonEmpty
 neh :: Prism' (NE.NonEmpty Natural) NonEmptyHeaps
@@ -31,11 +36,6 @@ neh = let
 
 allEmpty :: (F.Foldable t, Num a, Eq a) => t a -> Bool
 allEmpty = F.all (== 0)
-
--- | A wrapper or NonEmpty lists of Natural where at least one value is superior
---   to zero.
-newtype NonEmptyHeaps = NonEmptyHeaps { getHeaps :: NE.NonEmpty Natural }
-  deriving (Eq, Show, Read)
 
 instance Q.Arbitrary NonEmptyHeaps where
 

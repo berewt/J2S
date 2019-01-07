@@ -38,13 +38,18 @@ import qualified Test.QuickCheck            as Q
 import qualified J2S                        as J
 import           Nim.Types
 
+-- | An instance of a Nim Game
 data Nim
   = Nim
   { _activePlayer :: J.Player Nim
+    -- ^ The player who should play the next move
   , _otherPlayer  :: J.Player Nim
+  -- ^ Their opponent
   , _heaps        :: NonEmptyHeaps
+  -- ^ The current heaps configuration
   } deriving (Eq, Read, Show)
 
+-- | Datatype for game results
 data EndNim
   = EndNim
   { _winner    :: J.Player Nim
@@ -56,6 +61,7 @@ type instance J.End Nim = EndNim
 
 type instance J.Action Nim = (Natural, Natural)
 
+-- | Base Functor for interactions
 data InteractionF a
   = AskAction (J.Player Nim) Nim (J.Action Nim -> a)
   | DisplayAction (J.Action Nim) a
@@ -64,10 +70,13 @@ data InteractionF a
 
 type instance J.Inter Nim = Free InteractionF
 
+-- | Errors that can occur during a nim game
 data instance J.Err Nim
-  = InvalidIndex Natural
-  | InvalidTokens Natural
+  = InvalidIndex Natural -- ^ Wrong heap index
+  | InvalidTokens Natural -- ^ Invalid number of tokens
 
+-- | Nim players (it's ugly to differentiate first and second
+-- players with different constructors, but it's a convenient hack)
 data NimPlayer
   = FirstPlayer PlayerType
   | SecondPlayer PlayerType
@@ -79,6 +88,7 @@ playerType :: NimPlayer -> PlayerType
 playerType (FirstPlayer  p) = p
 playerType (SecondPlayer p) = p
 
+-- | Strategy for computer players
 data Strategy = Random | MinMax
   deriving (Eq, Ord, Read, Show)
 
@@ -119,7 +129,10 @@ instance J.ListableActions Nim where
 
 -- Helpers for actions
 
-buildHeapZipper :: Nim -> Top :>> NE.NonEmpty Natural :>> Natural
+type HeapZipper = Top :>> NE.NonEmpty Natural :>> Natural
+
+-- | Position a zipper on the leftmost heap
+buildHeapZipper :: Nim -> HeapZipper
 buildHeapZipper = views (heaps . re neh) (fromWithin traverse . zipper)
 
 modifyHeap :: Monad m
@@ -128,21 +141,23 @@ modifyHeap :: Monad m
            -> ExceptT (J.Err Nim) m (NE.NonEmpty Natural)
 modifyHeap (i, n) = moveToIndex i >=> popHeap n
 
+-- | Move to the index of the heap we manipulate
 moveToIndex :: Monad m
            => Natural
-           -> Top :>> NE.NonEmpty Natural :>> Natural
+           -> HeapZipper
            -> ExceptT (J.Err Nim) m (Top :>> NE.NonEmpty Natural :>> Natural)
 moveToIndex i = let
   handleError = maybe (throwError $ InvalidIndex i) return
   move = jerks rightward (fromIntegral i)
   in handleError . move
 
+-- | Remove n elements at the current zipper position
 popHeap :: (Monad m)
         => Natural
-        -> Top :>> NE.NonEmpty Natural :>> Natural
+        -> HeapZipper
         -> ExceptT (J.Err Nim) m (NE.NonEmpty Natural)
 popHeap n = let
-  handleError = maybe (throwError $ InvalidTokens n) (return . rezip)
+  handleError = maybe (throwError $ InvalidTokens n) (pure . rezip)
   pop = focus (safeSubtract n)
   in handleError . pop
 
@@ -150,8 +165,9 @@ rebuildInfo :: Nim -> NE.NonEmpty Natural -> Either (J.End Nim) Nim
 rebuildInfo o h = let
   a = view activePlayer o
   n = view otherPlayer o
+  endGame = EndNim a n (fromIntegral $ NE.length h)
   in maybe
-      (Left $ EndNim a n $ fromIntegral $ NE.length h)
+      (Left endGame)
       (Right . Nim n a)
       $ preview neh h
 
@@ -159,7 +175,7 @@ rebuildInfo o h = let
 -- Helper for Naturals
 
 safeSubtract :: (Ord a, Num a) => a -> a -> Maybe a
-safeSubtract x y = guard (x > 0 && x <= y) >> return (y - x)
+safeSubtract x y = guard (x > 0 && x <= y) >> pure (y - x)
 
 
 -- QuickCheck instances

@@ -25,32 +25,31 @@ import           J2S                    as J
 import           Nim.AI
 import           Nim.Core
 
+-- | Game launcher, in Text mode
 textNim :: RandomGen g => g -> Nim -> IO ()
 textNim gen = runGame (flip evalRandT gen . goInter) showScore
 
 goInter :: (MonadRandom m, MonadIO m) => Inter Nim a -> m a
-goInter (Pure x) = return x
-goInter (Free f) = case f of
-  AskAction p info g -> do
+goInter (Pure x) = pure x
+goInter (Free (AskAction p info g)) = do
     liftIO . T.putStrLn $ playerName p <> "'s turn:"
     liftIO . T.putStrLn $ showInfo info
     a <- askPlayer p info
     goInter $ g a
-  DisplayAction (i, n) x -> do
+goInter (Free (DisplayAction (i, n) x)) = do
     liftIO . T.putStrLn
       $ "Remove " <> T.pack (show n) <> " tokens from heap " <> T.pack (show i)
     goInter x
-  RaiseError e x ->
-    liftIO $ showError e >> goInter x
+goInter (Free (RaiseError e x)) = liftIO $ showError e >> goInter x
 
 askPlayer :: (MonadRandom m, MonadIO m) => Player Nim -> Nim -> m (Action Nim)
 askPlayer p info = case playerType p of
   Human -> do
     i <- askIndex
     n <- askNbTokens
-    return (i, n)
+    pure (i, n)
   Computer Random -> J.rand info
-  Computer MinMax -> return . flip runReader (buildMMParam p info) $ J.minMaxAB info
+  Computer MinMax -> pure . flip runReader (buildMMParam p info) $ J.minMaxAB info
 
 buildMMParam :: Player Nim -> Nim -> J.MinMaxParam Nim TrivialValuation
 buildMMParam p _ = let
